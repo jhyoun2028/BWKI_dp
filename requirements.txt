@@ -12,7 +12,15 @@ joblib==1.6.0
 # Schritt 5: URL-Prüfung + Tests
 tldextract==5.3.2
 pytest==9.1.1
+# Schritt 6: OCR + Pipeline (torch/torchvision werden von easyocr gezogen, CPU)
+easyocr==1.7.2
+torch==2.14.0
+torchvision==0.29.0
+# Schritt 7–8: Demo + API
+gradio==6.26.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
+pyngrok==8.1.2
 # Nur auf Google Colab (Schritt 4, notebooks/03_transformer.ipynb):
-# torch, transformers, accelerate – werden dort ungepinnt installiert, damit sie
-# zur vorinstallierten Colab-Torch-Version passen. Weitere erlaubte Pakete
-# (easyocr, gradio, fastapi, uvicorn, python-multipart) folgen in Schritt 6–8.
+# transformers, accelerate – dort ungepinnt installiert, passend zur Colab-Torch-Version.
