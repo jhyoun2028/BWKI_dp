@@ -1,0 +1,17 @@
+# Daten & Modelle (nicht versionieren)
+data/raw/*
+models/*
+!data/raw/.gitkeep
+!models/.gitkeep
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.joblib
+
+# Jupyter
+.ipynb_checkpoints/
+
+# System
+.DS_Store

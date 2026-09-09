@@ -1,0 +1,14 @@
+# DoppelCheck – gepinnte Abhängigkeiten (Python 3.11)
+# Installiert in Schritt 1 (Daten, Baseline, Notebooks):
+pandas==3.0.5
+numpy==2.4.6
+scikit-learn==1.9.0
+matplotlib==3.11.1
+seaborn==0.13.2
+requests==2.34.2
+datasets==5.0.1
+jupyter==1.1.1
+joblib==1.6.0
+# HINWEIS: CLAUDE.md lag beim Erstellen nicht im Repo, daher ist die Liste der
+# "erlaubten" Abhängigkeiten aus späteren Schritten (z. B. API/iOS-Shortcut)
+# hier noch NICHT enthalten. Bitte nach dem Hinzufügen von CLAUDE.md ergänzen.
