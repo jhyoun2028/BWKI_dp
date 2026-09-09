@@ -1,0 +1,130 @@
+{
+  "baseline_tfidf_logreg": {
+    "date": "2026-09-09",
+    "seed": 42,
+    "params": {
+      "features": "tfidf word(1,2) + tfidf char_wb(3,5)",
+      "clf": "LogisticRegression",
+      "C": 3,
+      "class_weight": "balanced",
+      "max_iter": 1000,
+      "C_grid": [
+        0.3,
+        1,
+        3
+      ]
+    },
+    "val_f1_best": 0.9449,
+    "train": {
+      "n": 4104,
+      "accuracy": 0.9995,
+      "precision": 0.9961,
+      "recall": 1.0,
+      "f1": 0.998,
+      "fpr": 0.0006,
+      "tn": 3597,
+      "fp": 2,
+      "fn": 0,
+      "tp": 505
+    },
+    "test": {
+      "n": 513,
+      "accuracy": 0.9922,
+      "precision": 0.9836,
+      "recall": 0.9524,
+      "f1": 0.9677,
+      "fpr": 0.0022,
+      "tn": 449,
+      "fp": 1,
+      "fn": 3,
+      "tp": 60
+    },
+    "test_de": null,
+    "top_features": {
+      "spam (label 1)": [
+        [
+          "word__call",
+          3.336
+        ],
+        [
+          "word__txt",
+          3.013
+        ],
+        [
+          "word__to",
+          2.812
+        ],
+        [
+          "word__uk",
+          2.635
+        ],
+        [
+          "word__free",
+          2.571
+        ],
+        [
+          "word__text",
+          2.344
+        ],
+        [
+          "char__ 08",
+          2.306
+        ],
+        [
+          "word__www",
+          2.22
+        ],
+        [
+          "char__087",
+          2.097
+        ],
+        [
+          "char__xt ",
+          2.071
+        ]
+      ],
+      "ham (label 0)": [
+        [
+          "char__ i ",
+          -2.913
+        ],
+        [
+          "word__me",
+          -2.051
+        ],
+        [
+          "char__.. ",
+          -1.871
+        ],
+        [
+          "word__my",
+          -1.732
+        ],
+        [
+          "char__...",
+          -1.623
+        ],
+        [
+          "char__... ",
+          -1.395
+        ],
+        [
+          "char__me ",
+          -1.151
+        ],
+        [
+          "char__ me ",
+          -1.115
+        ],
+        [
+          "char__ go",
+          -1.104
+        ],
+        [
+          "word__da",
+          -1.086
+        ]
+      ]
+    }
+  }
+}
