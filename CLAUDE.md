@@ -16,7 +16,8 @@
 - ✅ **Step 3** — `src/train_baseline.py` + `notebooks/02_baseline.ipynb`. TF-IDF + LogisticRegression (C=3). Test: acc 0.9922, F1 0.9677, FPR 0.0022 (1 false alarm / 450 legit). Train acc 0.9995. Saved: `models/baseline.joblib`, `results/metrics.json` (key `baseline_tfidf_logreg`), `results/experiments.csv`, `results/confusion_matrix_baseline.png`.
 - ⚠️ **Key finding:** top spam features are "call", "txt", "uk", "free", UK premium numbers ("08", "087") → the baseline learned 2012 British SMS spam, not German phishing. **Integrating the team's own German dataset is the top data priority.**
 - ❌ **Decision:** the second English dataset is DROPPED. Data = UCI + own German data. Mark the unused `SetFit/enron_spam` loader as "nicht verwendet" in `data/SOURCES.md`.
-- ⏭️ Next: Step 4 (transformer notebook for Colab), Step 5 (URL module), then 6–10.
+- ✅ **Step 4** — `notebooks/03_transformer.ipynb` written and syntax-validated here, **NOT run** (no GPU, Hugging Face blocked). Runs on Colab: clone repo → same splits → DistilBERT 3 epochs / lr 2e-5 / batch 16 / max_len 128 / seed 42, best checkpoint by val F1 → one test evaluation → merges `distilbert_multilingual` into `results/metrics.json`, appends `experiments.csv`, saves `confusion_matrix_distilbert.png`, model to Drive `DoppelCheck/models/distilbert/`, pushes `results/` back (needs Colab secret `GITHUB_TOKEN`). **Waiting for the Colab run.**
+- ⏭️ Next: Step 5 (URL module), then 6–10.
 
 ## Repository layout
 
