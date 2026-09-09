@@ -262,7 +262,9 @@ def _is_ip(host: str) -> bool:
 
 
 def check_url(url: str, lists: Lists | None = None) -> dict:
-    """Rate one URL. Returns {"level": "red"|"yellow"|"green", "reasons": [...]}."""
+    """Rate one URL. Returns {"level": "red"|"yellow"|"green", "reasons": [...], "trusted": bool}.
+
+    trusted = official brand domain or Tranco top-10k hit without any warning sign."""
     lists = default_lists() if lists is None else lists
     url = _deobfuscate(url.strip())
     if not re.match(r"[a-z][a-z0-9+.-]*://", url, re.I):
@@ -276,7 +278,7 @@ def check_url(url: str, lists: Lists | None = None) -> dict:
     green: list[str] = []
 
     if not host:
-        return {"level": "yellow", "reasons": ["Link konnte nicht gelesen werden"]}
+        return {"level": "yellow", "reasons": ["Link konnte nicht gelesen werden"], "trusted": False}
 
     # --- red: blocklists ---------------------------------------------------
     in_tranco = registered in lists.tranco_top
@@ -307,11 +309,12 @@ def check_url(url: str, lists: Lists | None = None) -> dict:
     elif in_tranco:
         green.append("Bekannte, viel besuchte Seite (Tranco Top 10.000)")
 
+    trusted = bool(green) and not red and not yellow
     if red:
-        return {"level": "red", "reasons": red + yellow}
+        return {"level": "red", "reasons": red + yellow, "trusted": False}
     if yellow:
-        return {"level": "yellow", "reasons": yellow}
-    return {"level": "green", "reasons": green or ["Keine Auffälligkeiten gefunden"]}
+        return {"level": "yellow", "reasons": yellow, "trusted": False}
+    return {"level": "green", "reasons": green or ["Keine Auffälligkeiten gefunden"], "trusted": trusted}
 
 
 if __name__ == "__main__":  # quick manual check

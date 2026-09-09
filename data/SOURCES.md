@@ -34,6 +34,7 @@ aus `src/data_prep.py` entfernt.
 | `data/raw/german_legit.csv` | 36 | normale deutsche Nachrichten: öffentliche SMS-Vorlagen (Marketing, Terminerinnerung) mit ausgefüllten Platzhaltern sowie echte Paket-/Shop-/Verifizierungs-SMS (anonymisiert); Quelle in `source_url` | 50 % Training, 50 % Test |
 | `data/raw/german_synthetic_phishing.csv` | 70 | **synthetisch**, mit Claude (Anthropic) am 2026-09-09 erzeugt, so in `source_url` vermerkt | **nur Training** |
 | `data/raw/german_synthetic_legit.csv` | 70 | **synthetisch**, ebenso | **nur Training** |
+| `data/raw/german_synthetic_legit_v2.csv` | 60 | **synthetisch** (v2, 2026-09-09): formelle Nachrichten mit offiziellem Link (Paket, Bank, Termin, Behörde, Telekom, Familie), so in `source_url` vermerkt | **nur Training** |
 
 Spalten: `text,label,source_url,category` (Kategorien Phishing: paket, bank, telekom, behoerde,
 whatsapp_familie, …; Legit: marketing, termin, paket_echt, shopping_echt, verifizierung, …).
@@ -41,7 +42,7 @@ Lizenz: eigene Sammlung des Teams; Verbraucherzentrale-Texte sind kurze Zitate a
 Warnmeldungen zu Bildungszwecken.
 
 **Aufteilung (seed 42):** echte deutsche Zeilen 50/50 in train/test, stratifiziert nach label × category
-(104 / 104 nach Duplikat-Entfernung); synthetische Zeilen ausschließlich im Training; kein deutscher Anteil
+(104 / 104 nach Duplikat-Entfernung); synthetische Zeilen (200) ausschließlich im Training; kein deutscher Anteil
 in val. **Vorverarbeitung:** echte URLs und der Platzhalter `*Link*` werden vor dem Training durch dasselbe
 Token `<URL>` ersetzt (`src/url_check.py: mask_urls`), damit das Modell nicht den Platzhalter lernt.
 

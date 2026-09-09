@@ -50,6 +50,7 @@ GERMAN_FILES = {
 SYNTHETIC_FILES = {
     "german_synthetic_phishing": RAW / "german_synthetic_phishing.csv",
     "german_synthetic_legit": RAW / "german_synthetic_legit.csv",
+    "german_synthetic_legit_v2": RAW / "german_synthetic_legit_v2.csv",   # formal legit messages WITH official links
 }
 GERMAN_COLUMNS = ["text", "label", "source_url", "category"]
 TEMPLATE_MARKER = "BEISPIEL"   # Zeilen mit dieser source_url sind nur Vorlage

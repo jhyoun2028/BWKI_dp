@@ -20,6 +20,10 @@ DISTILBERT_DIR = ROOT / "models" / "distilbert"
 BASELINE_PATH = ROOT / "models" / "baseline.joblib"
 
 RED_P, YELLOW_P = 0.80, 0.50
+# Trusted-link rule: if every link is an official brand domain / Tranco top-10k site and
+# no urgency phrase is present, a red-by-probability verdict is capped at yellow unless p >= TRUSTED_RED_P.
+TRUSTED_LINK_CAP = True
+TRUSTED_RED_P = 0.90
 URGENCY_DE = ["sofort", "innerhalb von 24 stunden", "konto gesperrt", "konto wird gesperrt",
               "eingeschränkt", "verifizieren", "zustellung fehlgeschlagen",
               "konnte nicht zugestellt werden", "zollgebühr", "gewinn", "letzte mahnung", "dringend"]
@@ -98,8 +102,11 @@ def _fit(sentence: str) -> str:
     return sentence[: MAX_REASON_LEN - 1].rstrip(" ,;–-") + "."
 
 
-def build_reason(verdict: str, p: float, url_results: list[dict], urgency: list[str]) -> str:
+def build_reason(verdict: str, p: float, url_results: list[dict], urgency: list[str],
+                 capped: bool = False) -> str:
     """One plain-German sentence (<= 120 chars), no jargon, no percentages."""
+    if capped:
+        return "Achtung – der Link führt zu einer bekannten Seite, der Text wirkt aber ungewöhnlich. Im Zweifel nachfragen."
     url_level = worst_level([r["level"] for r in url_results])
     brand = _brand_from_reasons(url_results)
     blocklisted = any("Phishing-Liste" in x for r in url_results for x in r["reasons"])
@@ -137,10 +144,15 @@ def analyze(text: str) -> dict:
     else:
         verdict = "green"
 
+    trusted_only = bool(url_results) and all(r["trusted"] for r in url_results)
+    capped = TRUSTED_LINK_CAP and verdict == "red" and trusted_only and not urgency and p < TRUSTED_RED_P
+    if capped:
+        verdict = "yellow"
+
     return {
         "verdict": verdict,
         "score": round(p, 4),
-        "reason_de": build_reason(verdict, p, url_results, urgency),
+        "reason_de": build_reason(verdict, p, url_results, urgency, capped),
         "urls": url_results,
         "model": clf.name,
     }

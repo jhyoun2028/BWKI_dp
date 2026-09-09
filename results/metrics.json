@@ -5,6 +5,147 @@
     "params": {
       "features": "tfidf word(1,2) + tfidf char_wb(3,5)",
       "clf": "LogisticRegression",
+      "C": 3,
+      "class_weight": "balanced",
+      "max_iter": 1000,
+      "C_grid": [
+        0.3,
+        1,
+        3
+      ],
+      "url_token": true,
+      "data": "train=4408 val=513 test=617 de_train=304 de_test=104"
+    },
+    "val_f1_best": 0.9449,
+    "train": {
+      "n": 4408,
+      "accuracy": 0.9986,
+      "precision": 0.991,
+      "recall": 1.0,
+      "f1": 0.9955,
+      "fpr": 0.0016,
+      "tn": 3741,
+      "fp": 6,
+      "fn": 0,
+      "tp": 661
+    },
+    "test": {
+      "n": 617,
+      "accuracy": 0.9789,
+      "precision": 0.9474,
+      "recall": 0.9664,
+      "f1": 0.9568,
+      "fpr": 0.0171,
+      "tn": 460,
+      "fp": 8,
+      "fn": 5,
+      "tp": 144
+    },
+    "test_de": {
+      "n": 104,
+      "accuracy": 0.9231,
+      "precision": 0.9239,
+      "recall": 0.9884,
+      "f1": 0.9551,
+      "fpr": 0.3889,
+      "tn": 11,
+      "fp": 7,
+      "fn": 1,
+      "tp": 85
+    },
+    "top_features": {
+      "spam (label 1)": [
+        [
+          "word__call",
+          3.14
+        ],
+        [
+          "word__sie",
+          3.044
+        ],
+        [
+          "word__txt",
+          2.851
+        ],
+        [
+          "word__url",
+          2.732
+        ],
+        [
+          "word__to",
+          2.521
+        ],
+        [
+          "word__free",
+          2.385
+        ],
+        [
+          "word__text",
+          2.27
+        ],
+        [
+          "char__ 08",
+          2.188
+        ],
+        [
+          "char__087",
+          2.04
+        ],
+        [
+          "char__xt ",
+          2.04
+        ]
+      ],
+      "ham (label 0)": [
+        [
+          "char__ i ",
+          -3.074
+        ],
+        [
+          "word__me",
+          -2.142
+        ],
+        [
+          "char__.. ",
+          -1.992
+        ],
+        [
+          "word__my",
+          -1.848
+        ],
+        [
+          "char__...",
+          -1.752
+        ],
+        [
+          "char__... ",
+          -1.496
+        ],
+        [
+          "word__uhr",
+          -1.397
+        ],
+        [
+          "word__am",
+          -1.314
+        ],
+        [
+          "char__me ",
+          -1.25
+        ],
+        [
+          "char__ me ",
+          -1.159
+        ]
+      ]
+    }
+  },
+  "baseline_tfidf_logreg_nourl": {
+    "date": "2026-09-09",
+    "seed": 42,
+    "params": {
+      "features": "tfidf word(1,2) + tfidf char_wb(3,5)",
+      "clf": "LogisticRegression",
       "C": 1,
       "class_weight": "balanced",
       "max_iter": 1000,
@@ -13,128 +154,129 @@
         1,
         3
       ],
-      "data": "train=4348 val=513 test=617 de_train=244 de_test=104"
+      "url_token": false,
+      "data": "train=4408 val=513 test=617 de_train=304 de_test=104"
     },
-    "val_f1_best": 0.9449,
+    "val_f1_best": 0.9375,
     "train": {
-      "n": 4348,
-      "accuracy": 0.9945,
-      "precision": 0.9663,
+      "n": 4408,
+      "accuracy": 0.9955,
+      "precision": 0.972,
       "recall": 0.9985,
-      "f1": 0.9821,
-      "fpr": 0.0062,
-      "tn": 3664,
-      "fp": 23,
+      "f1": 0.9851,
+      "fpr": 0.0051,
+      "tn": 3728,
+      "fp": 19,
       "fn": 1,
       "tp": 660
     },
     "test": {
       "n": 617,
-      "accuracy": 0.9757,
-      "precision": 0.9241,
-      "recall": 0.9799,
-      "f1": 0.9511,
-      "fpr": 0.0256,
-      "tn": 456,
-      "fp": 12,
-      "fn": 3,
-      "tp": 146
+      "accuracy": 0.9773,
+      "precision": 0.9355,
+      "recall": 0.9732,
+      "f1": 0.9539,
+      "fpr": 0.0214,
+      "tn": 458,
+      "fp": 10,
+      "fn": 4,
+      "tp": 145
     },
     "test_de": {
       "n": 104,
-      "accuracy": 0.8942,
-      "precision": 0.8866,
+      "accuracy": 0.9135,
+      "precision": 0.9053,
       "recall": 1.0,
-      "f1": 0.9399,
-      "fpr": 0.6111,
-      "tn": 7,
-      "fp": 11,
+      "f1": 0.9503,
+      "fpr": 0.5,
+      "tn": 9,
+      "fp": 9,
       "fn": 0,
       "tp": 86
     },
     "top_features": {
       "spam (label 1)": [
         [
-          "word__url",
-          2.983
+          "word__sie",
+          2.615
         ],
         [
           "word__call",
-          2.469
-        ],
-        [
-          "word__sie",
-          2.058
+          2.398
         ],
         [
           "word__txt",
-          2.037
-        ],
-        [
-          "word__to",
-          1.859
+          2.108
         ],
         [
           "word__free",
-          1.815
+          1.886
+        ],
+        [
+          "word__to",
+          1.885
         ],
         [
           "word__text",
-          1.604
-        ],
-        [
-          "char__ 08",
-          1.567
+          1.625
         ],
         [
           "word__ihre",
-          1.546
+          1.579
+        ],
+        [
+          "char__ 08",
+          1.56
         ],
         [
           "char__xt ",
-          1.463
+          1.478
+        ],
+        [
+          "char__087",
+          1.471
         ]
       ],
       "ham (label 0)": [
         [
           "char__ i ",
-          -2.271
+          -2.297
         ],
         [
           "char__.. ",
-          -1.583
+          -1.614
         ],
         [
           "word__me",
-          -1.571
-        ],
-        [
-          "word__my",
-          -1.449
+          -1.596
         ],
         [
           "char__...",
-          -1.435
+          -1.469
+        ],
+        [
+          "word__my",
+          -1.459
         ],
         [
           "char__... ",
-          -1.236
+          -1.263
         ],
         [
           "char__me ",
-          -0.995
+          -0.968
         ],
         [
           "char__ go",
-          -0.934
+          -0.952
+        ],
+        [
+          "word__uhr",
+          -0.913
         ],
         [
           "word__it",
-          -0.912
-        ],
-        [
-          "word__ok",
-          -0.885
+          -0.91
         ]
       ]
     }

@@ -76,6 +76,33 @@ def test_yellow_from_probability_band(monkeypatch):
     assert r["verdict"] == "yellow" and r["urls"] == []
 
 
+OFFICIAL_LINK_TEXT = "DHL: Ihre Sendung kommt heute. Details: https://www.dhl.de/de/privatkunden/verfolgen.html"
+
+
+def test_trusted_link_caps_red_at_yellow(monkeypatch):
+    _fix_score(monkeypatch, 0.85)
+    r = pipeline.analyze(OFFICIAL_LINK_TEXT)
+    _check_shape(r)
+    assert r["urls"][0]["trusted"] is True
+    assert r["verdict"] == "yellow"
+    assert "bekannten Seite" in r["reason_de"]
+
+
+def test_trusted_link_cap_not_applied_above_090(monkeypatch):
+    _fix_score(monkeypatch, 0.95)
+    assert pipeline.analyze(OFFICIAL_LINK_TEXT)["verdict"] == "red"
+
+
+def test_trusted_link_cap_not_applied_with_urgency(monkeypatch):
+    _fix_score(monkeypatch, 0.85)
+    assert pipeline.analyze(OFFICIAL_LINK_TEXT + " Bitte sofort bestätigen.")["verdict"] == "red"
+
+
+def test_trusted_link_cap_not_applied_for_untrusted_link(monkeypatch):
+    _fix_score(monkeypatch, 0.85)
+    assert pipeline.analyze("Ihre Sendung: https://paket-info-service.de/track")["verdict"] == "red"
+
+
 def test_red_from_probability_threshold(monkeypatch):
     _fix_score(monkeypatch, 0.8)
     assert pipeline.analyze("Guten Tag, wir melden uns wegen Ihrer Anfrage.")["verdict"] == "red"
