@@ -22,7 +22,8 @@
 - ✅ **Step 6** — `src/ocr.py` (easyocr de+en, CPU, lazy reader; weights DID download here via GitHub releases; 3 OCR repair rules for links: `http:ll`, dropped dot before TLD, `/` read as `l`), `src/pipeline.py` (baseline fallback active, DistilBERT loaded if `models/distilbert/` exists; verdict rules + `reason_de` ≤ 120 chars), `src/make_samples.py` → 3 screenshots in `data/samples/` (1080×1920). `tests/test_pipeline.py`: 13 tests incl. 3 real OCR tests → **52 tests pass** overall. Sample verdicts via OCR: DHL → red, Sparkasse → red, Familie → green.
 - ✅ **GitHub push works** since 2026-09-09 (Claude GitHub App installed).
 - ✅ **Step 7** — `app/gradio_demo.py` (tabs „Text einfügen“ / „Screenshot hochladen“, big colored verdict box, reason sentence 28 px, URL list with levels, recognized OCR text). Launched on :7860 and both tabs called via gradio_client: DHL text → ROT, family_ok.png → GRÜN, bank_phishing.png → ROT.
-- ⏭️ Next: Step 8 (API + Colab demo notebook + shortcut README), then 9–10. German CSVs still 0 real rows.
+- ✅ **Step 8** — `api/main.py` (GET /health, POST /scan-text, POST /scan multipart `file`; 400 for non-images, 503 if OCR missing). Tested with curl: health ok (model baseline, ocr true), Sparkasse text → red (score only 0.14 – the URL rule catches it, the UCI-trained model does not), family text → green, dhl_phishing.png → red with OCR text. `notebooks/04_demo_colab.ipynb` (clone, install, optional Drive model, uvicorn in background, ngrok tunnel via secret `NGROK_AUTHTOKEN`, prints public `/scan` URL; written + syntax-validated, not run here). `shortcut/README.md` with the exact iOS Shortcut steps and the JSON the shortcut receives.
+- ⏭️ Next: Step 9 (error_analysis.md from REAL misclassified test examples – needs the Colab DistilBERT run first), Step 10 (README). **German CSVs still 0 real rows – top risk.**
 
 ## Repository layout
 
