@@ -26,15 +26,31 @@ ausschließlich UCI (öffentlicher Benchmark) + eigene deutsche Sammlung. Der Hu
 war aus der Entwicklungsumgebung ohnehin gesperrt (HTTP 403); der Lade-Code wurde
 aus `src/data_prep.py` entfernt.
 
-## 3. Eigene deutsche Daten (Vorlagen)
+## 3. Eigene deutsche Daten (seit 2026-09-09 im Repo)
 
-| Datei | Inhalt |
-|---|---|
-| `data/raw/german_phishing.csv` | Phishing-Nachrichten, `label=1` (z. B. aus Phishing-Radar der Verbraucherzentrale) |
-| `data/raw/german_legit.csv` | echte, anonymisierte Alltagsnachrichten, `label=0` |
+| Datei | Zeilen | Inhalt | Verwendung |
+|---|---|---|---|
+| `data/raw/german_phishing.csv` | 173 | echte Phishing-SMS/-Mails, abgetippt aus Warnungen der Verbraucherzentrale (Phishing-Radar, Paketdienst-SMS, Fake-Banking-SMS, „Hallo Mama“-Betrug, Voicemail-Betrug); `source_url` = Artikel-URL; Links dort als `*Link*` maskiert | 50 % Training, 50 % Test |
+| `data/raw/german_legit.csv` | 36 | normale deutsche Nachrichten: öffentliche SMS-Vorlagen (Marketing, Terminerinnerung) mit ausgefüllten Platzhaltern sowie echte Paket-/Shop-/Verifizierungs-SMS (anonymisiert); Quelle in `source_url` | 50 % Training, 50 % Test |
+| `data/raw/german_synthetic_phishing.csv` | 70 | **synthetisch**, mit Claude (Anthropic) am 2026-09-09 erzeugt, so in `source_url` vermerkt | **nur Training** |
+| `data/raw/german_synthetic_legit.csv` | 70 | **synthetisch**, ebenso | **nur Training** |
 
-Spalten: `text,label,source_url,category` (category z. B. Paket, Bank, Behörde,
-Gewinnspiel, Familie). Beide Dateien wurden am 2026-09-09 als **Vorlagen** mit je
-2 Beispielzeilen angelegt (`source_url=BEISPIEL`); solche Beispielzeilen werden
-vom Skript ignoriert. `data/raw/` ist in `.gitignore` – die gesammelten Texte
-bleiben lokal.
+Spalten: `text,label,source_url,category` (Kategorien Phishing: paket, bank, telekom, behoerde,
+whatsapp_familie, …; Legit: marketing, termin, paket_echt, shopping_echt, verifizierung, …).
+Lizenz: eigene Sammlung des Teams; Verbraucherzentrale-Texte sind kurze Zitate aus öffentlichen
+Warnmeldungen zu Bildungszwecken.
+
+**Aufteilung (seed 42):** echte deutsche Zeilen 50/50 in train/test, stratifiziert nach label × category
+(104 / 104 nach Duplikat-Entfernung); synthetische Zeilen ausschließlich im Training; kein deutscher Anteil
+in val. **Vorverarbeitung:** echte URLs und der Platzhalter `*Link*` werden vor dem Training durch dasselbe
+Token `<URL>` ersetzt (`src/url_check.py: mask_urls`), damit das Modell nicht den Platzhalter lernt.
+
+**Bekannte Schwäche:** nur 36 echte Legit-Zeilen (Ziel ≥ 100), davon 28 aus Marketing-Vorlagen einer
+Quelle. Der deutsche Test enthält daher nur 18 Legit-Zeilen – die deutsche Falsch-Alarm-Rate ist grob.
+Mehr echte Alltagsnachrichten (Paket, Bank, Arzt, Familie) sind die wichtigste offene Datenaufgabe.
+
+## 4. Vorlagen (historisch)
+
+Bis zum 2026-09-09 lagen die deutschen CSVs nur als Vorlagen mit je 2 Beispielzeilen vor
+(`source_url=BEISPIEL`, vom Skript ignoriert). `data_prep.py` legt solche Vorlagen weiterhin an,
+falls die Dateien fehlen.

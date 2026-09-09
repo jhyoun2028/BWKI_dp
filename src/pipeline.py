@@ -13,7 +13,7 @@ from pathlib import Path
 import joblib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from url_check import check_url, extract_urls  # noqa: E402
+from url_check import check_url, extract_urls, mask_urls  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DISTILBERT_DIR = ROOT / "models" / "distilbert"
@@ -57,7 +57,8 @@ class Classifier:
         return "baseline_tfidf_logreg", lambda text: float(pipe.predict_proba([text])[0][1])
 
     def phishing_probability(self, text: str) -> float:
-        return self._predict(text)
+        # same preprocessing as data_prep.py: links become the <URL> token
+        return self._predict(mask_urls(text))
 
 
 _classifier: Classifier | None = None

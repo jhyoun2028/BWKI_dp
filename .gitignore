@@ -2,6 +2,8 @@
 data/raw/*
 models/*
 !data/raw/.gitkeep
+# eigene deutsche Sammlung wird versioniert (vom Team am 2026-09-09 ins Repo gestellt)
+!data/raw/german_*.csv
 !models/.gitkeep
 data/blocklists/*
 !data/blocklists/.gitkeep

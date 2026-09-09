@@ -55,11 +55,30 @@ def test_yellow_from_urgency_phrase_only():
     assert "Druck" in r["reason_de"]
 
 
-def test_yellow_from_suspicious_link():
+def _fix_score(monkeypatch, p: float) -> None:
+    """Pin the classifier score so the verdict RULES are tested independently of the model."""
+    monkeypatch.setattr(pipeline.get_classifier(), "_predict", lambda text: p)
+
+
+def test_yellow_from_suspicious_link(monkeypatch):
+    _fix_score(monkeypatch, 0.1)
     r = pipeline.analyze("Schau mal hier: https://bit.ly/3xYzAbc")
     _check_shape(r)
-    assert r["verdict"] == "yellow"
     assert r["urls"][0]["level"] == "yellow"
+    assert r["verdict"] == "yellow"
+    assert "Link" in r["reason_de"]
+
+
+def test_yellow_from_probability_band(monkeypatch):
+    _fix_score(monkeypatch, 0.65)
+    r = pipeline.analyze("Guten Tag, wir melden uns wegen Ihrer Anfrage.")
+    _check_shape(r)
+    assert r["verdict"] == "yellow" and r["urls"] == []
+
+
+def test_red_from_probability_threshold(monkeypatch):
+    _fix_score(monkeypatch, 0.8)
+    assert pipeline.analyze("Guten Tag, wir melden uns wegen Ihrer Anfrage.")["verdict"] == "red"
 
 
 def test_red_from_high_probability_english_spam():

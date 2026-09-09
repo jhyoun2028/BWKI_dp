@@ -145,7 +145,9 @@ def main() -> None:
     # --- Speichern ---------------------------------------------------------
     params = {"features": "tfidf word(1,2) + tfidf char_wb(3,5)",
               "clf": "LogisticRegression", "C": best_C,
-              "class_weight": "balanced", "max_iter": 1000, "C_grid": C_GRID}
+              "class_weight": "balanced", "max_iter": 1000, "C_grid": C_GRID,
+              "data": f"train={len(train)} val={len(val)} test={len(test)} "
+                      f"de_train={int((train.lang == 'de').sum())} de_test={int(de.sum())}"}
     entry = {"date": date.today().isoformat(), "seed": SEED, "params": params,
              "val_f1_best": round(best_f1, 4), "train": m_train, "test": m_test,
              "test_de": m_test_de, "top_features": feats}

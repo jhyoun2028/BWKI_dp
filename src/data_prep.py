@@ -19,6 +19,9 @@ import pandas as pd
 import requests
 from sklearn.model_selection import train_test_split
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from url_check import URL_MASK, mask_urls  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
 PROCESSED = ROOT / "data" / "processed"
@@ -38,12 +41,20 @@ UCI_MIRRORS = [
 UCI_FILE = RAW / "SMSSpamCollection"
 
 # --- Quelle 2: eigene deutsche Daten ---------------------------------------
+# real: hand-collected (Phishing-Radar, filled-in public templates) -> 50/50 train/test
 GERMAN_FILES = {
     "german_phishing": RAW / "german_phishing.csv",
     "german_legit": RAW / "german_legit.csv",
 }
+# synthetic: LLM-generated, marked in source_url -> TRAIN ONLY, never test
+SYNTHETIC_FILES = {
+    "german_synthetic_phishing": RAW / "german_synthetic_phishing.csv",
+    "german_synthetic_legit": RAW / "german_synthetic_legit.csv",
+}
 GERMAN_COLUMNS = ["text", "label", "source_url", "category"]
 TEMPLATE_MARKER = "BEISPIEL"   # Zeilen mit dieser source_url sind nur Vorlage
+LINK_PLACEHOLDER = re.compile(r"\*\s*link\s*\*", re.I)   # "*Link*" in collected texts = masked URL
+DE_REAL_TEST_SHARE = 0.5
 
 
 def log(msg: str) -> None:
@@ -95,39 +106,50 @@ def _write_template(path: Path, rows: list[list[str]]) -> None:
         w.writerows(rows)
 
 
+def _read_german_csv(path: Path, source: str, group: str) -> pd.DataFrame:
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    missing = [c for c in GERMAN_COLUMNS if c not in df.columns]
+    if missing:
+        raise ValueError(f"{path.name}: Spalten fehlen: {missing}")
+    n_template = int((df["source_url"] == TEMPLATE_MARKER).sum())
+    df = df[df["source_url"] != TEMPLATE_MARKER]
+    df = df[df["text"].str.strip() != ""]
+    df["label"] = pd.to_numeric(df["label"], errors="coerce")
+    df = df.dropna(subset=["label"])
+    df["label"] = df["label"].astype(int)
+    df["lang"] = "de"
+    df["source"] = source
+    df["group"] = group
+    df["category"] = df["category"].str.strip().str.lower()
+    log(f"[de] {path.name}: {len(df)} Zeilen ({group})"
+        + (f", {n_template} Vorlagenzeilen ignoriert" if n_template else ""))
+    return df[["text", "label", "lang", "source", "group", "category"]]
+
+
 def load_german() -> pd.DataFrame:
-    """Eigene deutsche CSVs laden; fehlen sie, Vorlagen anlegen."""
+    """Own German data: real CSVs (templates created if missing) + optional synthetic CSVs."""
     frames = []
     for name, path in GERMAN_FILES.items():
         if not path.exists():
             if name == "german_phishing":
                 rows = [
-                    ["Ihr Paket konnte nicht zugestellt werden. Bitte bestätigen Sie Ihre Adresse: hxxp://beispiel-link.de", "1", TEMPLATE_MARKER, "Paket"],
-                    ["Ihr Konto wurde vorübergehend gesperrt. Verifizieren Sie sich jetzt unter hxxp://beispiel-bank.de", "1", TEMPLATE_MARKER, "Bank"],
+                    ["Ihr Paket konnte nicht zugestellt werden. Bitte bestätigen Sie Ihre Adresse: *Link*", "1", TEMPLATE_MARKER, "paket"],
+                    ["Ihr Konto wurde vorübergehend gesperrt. Verifizieren Sie sich jetzt: *Link*", "1", TEMPLATE_MARKER, "bank"],
                 ]
             else:
                 rows = [
-                    ["Hallo Mama, bin gut angekommen. Melde mich später nochmal!", "0", TEMPLATE_MARKER, "Familie"],
-                    ["Ihre Sendung wird heute zwischen 14 und 16 Uhr zugestellt.", "0", TEMPLATE_MARKER, "Paket"],
+                    ["Hallo Mama, bin gut angekommen. Melde mich später nochmal!", "0", TEMPLATE_MARKER, "familie"],
+                    ["Ihre Sendung wird heute zwischen 14 und 16 Uhr zugestellt.", "0", TEMPLATE_MARKER, "paket_echt"],
                 ]
             _write_template(path, rows)
             log(f"[de] {path.relative_to(ROOT)} fehlte – VORLAGE mit 2 Beispielzeilen angelegt "
                 f"(source_url={TEMPLATE_MARKER}; Beispielzeilen werden NICHT trainiert)")
-        df = pd.read_csv(path, dtype=str, keep_default_na=False)
-        missing = [c for c in GERMAN_COLUMNS if c not in df.columns]
-        if missing:
-            raise ValueError(f"{path.name}: Spalten fehlen: {missing}")
-        n_template = int((df["source_url"] == TEMPLATE_MARKER).sum())
-        df = df[df["source_url"] != TEMPLATE_MARKER]
-        df = df[df["text"].str.strip() != ""]
-        df["label"] = pd.to_numeric(df["label"], errors="coerce")
-        df = df.dropna(subset=["label"])
-        df["label"] = df["label"].astype(int)
-        df["lang"] = "de"
-        df["source"] = name
-        log(f"[de] {path.name}: {len(df)} echte Zeilen"
-            + (f" ({n_template} Vorlagenzeilen ignoriert)" if n_template else ""))
-        frames.append(df[["text", "label", "lang", "source"]])
+        frames.append(_read_german_csv(path, name, "de_real"))
+    for name, path in SYNTHETIC_FILES.items():
+        if path.exists():
+            frames.append(_read_german_csv(path, name, "de_synth"))
+        else:
+            log(f"[de] {path.name} nicht vorhanden – ohne synthetische Daten")
     return pd.concat(frames, ignore_index=True)
 
 
@@ -143,6 +165,8 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     n0 = len(df)
     df = df.copy()
     df["text"] = df["text"].astype(str).str.strip()
+    # classifier input: real URLs and the "*Link*" placeholder become the same token
+    df["text"] = df["text"].map(lambda t: mask_urls(LINK_PLACEHOLDER.sub(URL_MASK, t)))
     df = df[df["text"].str.len() >= MIN_CHARS]
     n1 = len(df)
     df = df.drop_duplicates(subset="text")
@@ -154,20 +178,37 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
+def _strata(df: pd.DataFrame, cols: list[str], min_count: int = 2) -> pd.Series:
+    """Stratification key from `cols`; strata smaller than min_count fall back to label only."""
+    key = df[cols].astype(str).agg("_".join, axis=1)
+    small = key.map(key.value_counts()) < min_count
+    return key.where(~small, df["label"].astype(str))
+
+
 def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Stratifizierter 80/10/10-Split nach label (und lang, falls genug Zeilen)."""
-    strata = df["label"].astype(str) + "_" + df["lang"]
-    if strata.value_counts().min() >= 10:
-        strat_key = strata
-        log("[split] stratifiziert nach label × lang")
+    """en (UCI): 80/10/10 by label. de_real: 50/50 train/test by label × category.
+    de_synth: train only. val therefore contains English rows only."""
+    en = df[df["lang"] == "en"]
+    de_real = df[df["group"] == "de_real"]
+    de_synth = df[df["group"] == "de_synth"]
+
+    en_train, rest = train_test_split(en, test_size=0.2, stratify=en["label"], random_state=SEED)
+    en_val, en_test = train_test_split(rest, test_size=0.5, stratify=rest["label"], random_state=SEED)
+    log(f"[split] en: {len(en_train)}/{len(en_val)}/{len(en_test)} (80/10/10, stratifiziert nach label)")
+
+    if len(de_real):
+        de_train, de_test = train_test_split(de_real, test_size=DE_REAL_TEST_SHARE,
+                                             stratify=_strata(de_real, ["label", "category"]), random_state=SEED)
+        log(f"[split] de_real: {len(de_train)} train / {len(de_test)} test (50/50, stratifiziert nach label × category)")
     else:
-        strat_key = df["label"].astype(str)
-        log("[split] zu wenige Zeilen pro label × lang – stratifiziert nur nach label")
-    train, rest = train_test_split(df, test_size=0.2, stratify=strat_key, random_state=SEED)
-    rest_key = strat_key.loc[rest.index]
-    val, test = train_test_split(rest, test_size=0.5, stratify=rest_key, random_state=SEED)
+        de_train = de_test = de_real
+    if len(de_synth):
+        log(f"[split] de_synth: {len(de_synth)} nur train")
+
+    train = pd.concat([en_train, de_train, de_synth]).sample(frac=1, random_state=SEED)
+    test = pd.concat([en_test, de_test]).sample(frac=1, random_state=SEED)
     return {"train": train.reset_index(drop=True),
-            "val": val.reset_index(drop=True),
+            "val": en_val.reset_index(drop=True),
             "test": test.reset_index(drop=True)}
 
 
@@ -189,10 +230,13 @@ def summarize(splits: dict[str, pd.DataFrame]) -> str:
     lines += ["", "## Gesamt pro Split", "", "| split | n | spam-Anteil | mean_len |", "|---|---|---|---|"]
     for name, d in splits.items():
         lines.append(f"| {name} | {len(d)} | {d.label.mean():.3f} | {d.text.str.len().mean():.1f} |")
-    lines += ["", "## Quellen", "", "| source | n |", "|---|---|"]
-    all_df = pd.concat(splits.values())
-    for src, n in all_df["source"].value_counts().items():
-        lines.append(f"| {src} | {n} |")
+    lines += ["", "## Quellen pro Split", "", "| source | train | val | test |", "|---|---|---|---|"]
+    all_df = pd.concat([d.assign(split=n) for n, d in splits.items()])
+    for src, g in all_df.groupby("source"):
+        c = g["split"].value_counts()
+        lines.append(f"| {src} | {c.get('train', 0)} | {c.get('val', 0)} | {c.get('test', 0)} |")
+    lines += ["", f"Hinweis: URLs und der Platzhalter `*Link*` sind im Text durch `{URL_MASK}` ersetzt; "
+              "synthetische deutsche Zeilen nur im Training; val enthält nur englische Zeilen."]
     return "\n".join(lines) + "\n"
 
 
@@ -202,8 +246,10 @@ def main() -> None:
     RESULTS.mkdir(parents=True, exist_ok=True)
 
     # Decision (CLAUDE.md): data = UCI + own German data only, no second English set.
-    parts = [download_uci(), load_german()]
-    df = pd.concat([p for p in parts if len(p)], ignore_index=True)
+    uci = download_uci().assign(group="en", category="")
+    de = load_german()
+    # order matters for dedupe (keep first): real German > UCI > synthetic
+    df = pd.concat([de[de.group == "de_real"], uci, de[de.group == "de_synth"]], ignore_index=True)
     df["label"] = df["label"].astype(int)
     df = clean(df)
 

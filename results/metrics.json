@@ -5,124 +5,136 @@
     "params": {
       "features": "tfidf word(1,2) + tfidf char_wb(3,5)",
       "clf": "LogisticRegression",
-      "C": 3,
+      "C": 1,
       "class_weight": "balanced",
       "max_iter": 1000,
       "C_grid": [
         0.3,
         1,
         3
-      ]
+      ],
+      "data": "train=4348 val=513 test=617 de_train=244 de_test=104"
     },
     "val_f1_best": 0.9449,
     "train": {
-      "n": 4104,
-      "accuracy": 0.9995,
-      "precision": 0.9961,
-      "recall": 1.0,
-      "f1": 0.998,
-      "fpr": 0.0006,
-      "tn": 3597,
-      "fp": 2,
-      "fn": 0,
-      "tp": 505
+      "n": 4348,
+      "accuracy": 0.9945,
+      "precision": 0.9663,
+      "recall": 0.9985,
+      "f1": 0.9821,
+      "fpr": 0.0062,
+      "tn": 3664,
+      "fp": 23,
+      "fn": 1,
+      "tp": 660
     },
     "test": {
-      "n": 513,
-      "accuracy": 0.9922,
-      "precision": 0.9836,
-      "recall": 0.9524,
-      "f1": 0.9677,
-      "fpr": 0.0022,
-      "tn": 449,
-      "fp": 1,
+      "n": 617,
+      "accuracy": 0.9757,
+      "precision": 0.9241,
+      "recall": 0.9799,
+      "f1": 0.9511,
+      "fpr": 0.0256,
+      "tn": 456,
+      "fp": 12,
       "fn": 3,
-      "tp": 60
+      "tp": 146
     },
-    "test_de": null,
+    "test_de": {
+      "n": 104,
+      "accuracy": 0.8942,
+      "precision": 0.8866,
+      "recall": 1.0,
+      "f1": 0.9399,
+      "fpr": 0.6111,
+      "tn": 7,
+      "fp": 11,
+      "fn": 0,
+      "tp": 86
+    },
     "top_features": {
       "spam (label 1)": [
         [
+          "word__url",
+          2.983
+        ],
+        [
           "word__call",
-          3.336
+          2.469
+        ],
+        [
+          "word__sie",
+          2.058
         ],
         [
           "word__txt",
-          3.013
+          2.037
         ],
         [
           "word__to",
-          2.812
-        ],
-        [
-          "word__uk",
-          2.635
+          1.859
         ],
         [
           "word__free",
-          2.571
+          1.815
         ],
         [
           "word__text",
-          2.344
+          1.604
         ],
         [
           "char__ 08",
-          2.306
+          1.567
         ],
         [
-          "word__www",
-          2.22
-        ],
-        [
-          "char__087",
-          2.097
+          "word__ihre",
+          1.546
         ],
         [
           "char__xt ",
-          2.071
+          1.463
         ]
       ],
       "ham (label 0)": [
         [
           "char__ i ",
-          -2.913
-        ],
-        [
-          "word__me",
-          -2.051
+          -2.271
         ],
         [
           "char__.. ",
-          -1.871
+          -1.583
+        ],
+        [
+          "word__me",
+          -1.571
         ],
         [
           "word__my",
-          -1.732
+          -1.449
         ],
         [
           "char__...",
-          -1.623
+          -1.435
         ],
         [
           "char__... ",
-          -1.395
+          -1.236
         ],
         [
           "char__me ",
-          -1.151
-        ],
-        [
-          "char__ me ",
-          -1.115
+          -0.995
         ],
         [
           "char__ go",
-          -1.104
+          -0.934
         ],
         [
-          "word__da",
-          -1.086
+          "word__it",
+          -0.912
+        ],
+        [
+          "word__ok",
+          -0.885
         ]
       ]
     }

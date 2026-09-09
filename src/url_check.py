@@ -150,6 +150,14 @@ _URL_RE = re.compile(
 _TRAILING = ".,;:!?)]}>\"'"
 
 
+def _hostname(url: str) -> str:
+    """Hostname of a URL-like string; '' if urlsplit rejects it (e.g. stray '[')."""
+    try:
+        return urlsplit(url).hostname or ""
+    except ValueError:
+        return ""
+
+
 def _deobfuscate(text: str) -> str:
     for pattern, repl in _OBFUSCATIONS:
         text = pattern.sub(repl, text)
@@ -163,13 +171,31 @@ def extract_urls(text: str) -> list[str]:
         raw = m.group(0).rstrip(_TRAILING)
         # strip an unbalanced closing paren, e.g. "(see dhl.de/track)" -> already handled by rstrip
         url = raw if re.match(r"https?://", raw, re.I) else "http://" + raw
-        host = urlsplit(url).hostname or ""
-        ext = _extract(host)
+        ext = _extract(_hostname(url))
         if not ext.suffix or not ext.domain:      # "z.B." / "e.g." / version numbers
             continue
         if url not in found:
             found.append(url)
     return found
+
+
+URL_MASK = "<URL>"
+
+
+def mask_urls(text: str) -> str:
+    """Replace every URL (same detection as extract_urls) with URL_MASK.
+
+    Used for classifier input in training AND inference, so the model learns
+    "contains a link" instead of memorizing domains; the URL itself is judged
+    separately by check_url.
+    """
+    def repl(m: re.Match) -> str:
+        raw = m.group(0).rstrip(_TRAILING)
+        trailing = m.group(0)[len(raw):]
+        url = raw if re.match(r"https?://", raw, re.I) else "http://" + raw
+        ext = _extract(_hostname(url))
+        return (URL_MASK + trailing) if (ext.suffix and ext.domain) else m.group(0)
+    return _URL_RE.sub(repl, _deobfuscate(text))
 
 
 # ---------------------------------------------------------------------------
