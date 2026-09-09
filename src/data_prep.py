@@ -26,7 +26,6 @@ RESULTS = ROOT / "results"
 
 SEED = 42
 MIN_CHARS = 5
-MAX_CHARS_EMAIL = 512
 
 # --- Quelle 1: UCI SMS Spam Collection -------------------------------------
 UCI_URL = "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
@@ -38,11 +37,7 @@ UCI_MIRRORS = [
 ]
 UCI_FILE = RAW / "SMSSpamCollection"
 
-# --- Quelle 2: zweiter englischer Datensatz vom HuggingFace Hub -------------
-HF_DATASET = "SetFit/enron_spam"   # E-Mail-Spam (Enron), Spalten text/label
-HF_SOURCE_NAME = "hf_setfit_enron_spam"
-
-# --- Quelle 3: eigene deutsche Daten ---------------------------------------
+# --- Quelle 2: eigene deutsche Daten ---------------------------------------
 GERMAN_FILES = {
     "german_phishing": RAW / "german_phishing.csv",
     "german_legit": RAW / "german_legit.csv",
@@ -90,36 +85,6 @@ def download_uci() -> pd.DataFrame:
     df["lang"] = "en"
     df["source"] = "uci_sms"
     log(f"[uci] {len(df)} Zeilen, davon spam={int(df.label.sum())}")
-    return df[["text", "label", "lang", "source"]]
-
-
-def load_hf_dataset() -> pd.DataFrame:
-    """Zweite englische Quelle vom HuggingFace Hub (ohne Login).
-
-    Schlägt der Download fehl (kein Netz, Hub gesperrt), wird ein leerer
-    DataFrame zurückgegeben und das Projekt läuft nur mit UCI weiter.
-    """
-    try:
-        from datasets import load_dataset
-        log(f"[hf] lade {HF_DATASET}")
-        ds = load_dataset(HF_DATASET)
-        frames = [ds[split].to_pandas() for split in ds.keys()]
-        df = pd.concat(frames, ignore_index=True)
-    except Exception as e:
-        log(f"[hf] NICHT geladen ({type(e).__name__}: {e}) – weiter nur mit UCI")
-        return pd.DataFrame(columns=["text", "label", "lang", "source"])
-
-    if "text" not in df.columns:
-        raise ValueError(f"[hf] Spalte 'text' fehlt, vorhanden: {list(df.columns)}")
-    if "label_text" in df.columns:
-        df["label"] = df["label_text"].str.lower().map({"ham": 0, "spam": 1})
-    df["label"] = pd.to_numeric(df["label"], errors="coerce")
-    df = df.dropna(subset=["label"])
-    df["label"] = df["label"].astype(int)
-    df["text"] = df["text"].astype(str).str.slice(0, MAX_CHARS_EMAIL)  # E-Mails kürzen
-    df["lang"] = "en"
-    df["source"] = HF_SOURCE_NAME
-    log(f"[hf] {len(df)} Zeilen, davon spam={int(df.label.sum())}")
     return df[["text", "label", "lang", "source"]]
 
 
@@ -236,7 +201,8 @@ def main() -> None:
     PROCESSED.mkdir(parents=True, exist_ok=True)
     RESULTS.mkdir(parents=True, exist_ok=True)
 
-    parts = [download_uci(), load_hf_dataset(), load_german()]
+    # Decision (CLAUDE.md): data = UCI + own German data only, no second English set.
+    parts = [download_uci(), load_german()]
     df = pd.concat([p for p in parts if len(p)], ignore_index=True)
     df["label"] = df["label"].astype(int)
     df = clean(df)

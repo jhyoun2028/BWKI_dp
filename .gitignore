@@ -3,6 +3,11 @@ data/raw/*
 models/*
 !data/raw/.gitkeep
 !models/.gitkeep
+data/blocklists/*
+!data/blocklists/.gitkeep
+
+# Tests
+.pytest_cache/
 
 # Python
 venv/

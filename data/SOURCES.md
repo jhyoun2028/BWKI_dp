@@ -17,22 +17,14 @@ die wortgetreu gespiegelte Datei `SMSSpamCollection` (5.574 Zeilen, Tab-getrennt
 von GitHub (`justmarkham/pycon-2016-tutorial`, `justmarkham/DAT8`).
 Beim Erstlauf am 2026-09-09 wurde der Spiegel benutzt (Original per Netzwerkrichtlinie gesperrt).
 
-## 2. Zweite englische Quelle: HuggingFace Hub (NICHT verifiziert)
+## 2. Zweite englische Quelle – NICHT VERWENDET
 
-| Feld | Wert |
-|---|---|
-| Name | `SetFit/enron_spam` (E-Mail-Spam, Enron-Korpus) |
-| URL | https://huggingface.co/datasets/SetFit/enron_spam |
-| Lizenz | unbekannt – auf der Hub-Seite prüfen, bevor die Daten verwendet werden |
-| Größe | laut Hub ca. 31.700 Train + 2.000 Test (nicht selbst geprüft) |
-| Im Projekt | `source="hf_setfit_enron_spam"`, `lang="en"`, Texte auf 512 Zeichen gekürzt |
-
-**Status:** Der Hub (`huggingface.co`) war aus der Entwicklungsumgebung per
-Netzwerkrichtlinie gesperrt (HTTP 403). `load_hf_dataset()` in `src/data_prep.py`
-fängt den Fehler ab und das Projekt lief **nur mit UCI** weiter. Der Code-Pfad
-für den Hub-Datensatz ist geschrieben, aber **ungetestet**. Beim ersten Lauf
-auf einem Rechner mit Internet bitte prüfen: Zeilenzahl, Spalten `text`/`label`,
-Lizenz – und diese Tabelle danach korrigieren.
+Ein zweiter englischer Datensatz vom HuggingFace Hub (`SetFit/enron_spam`,
+https://huggingface.co/datasets/SetFit/enron_spam) war ursprünglich vorgesehen.
+**Entscheidung vom 2026-09-09:** nicht verwendet. Die Daten des Projekts sind
+ausschließlich UCI (öffentlicher Benchmark) + eigene deutsche Sammlung. Der Hub
+war aus der Entwicklungsumgebung ohnehin gesperrt (HTTP 403); der Lade-Code wurde
+aus `src/data_prep.py` entfernt.
 
 ## 3. Eigene deutsche Daten (Vorlagen)
 
