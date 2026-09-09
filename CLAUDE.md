@@ -17,7 +17,9 @@
 - ⚠️ **Key finding:** top spam features are "call", "txt", "uk", "free", UK premium numbers ("08", "087") → the baseline learned 2012 British SMS spam, not German phishing. **Integrating the team's own German dataset is the top data priority.**
 - ❌ **Decision:** the second English dataset is DROPPED. Data = UCI + own German data. Mark the unused `SetFit/enron_spam` loader as "nicht verwendet" in `data/SOURCES.md`.
 - ✅ **Step 4** — `notebooks/03_transformer.ipynb` written and syntax-validated here, **NOT run** (no GPU, Hugging Face blocked). Runs on Colab: clone repo → same splits → DistilBERT 3 epochs / lr 2e-5 / batch 16 / max_len 128 / seed 42, best checkpoint by val F1 → one test evaluation → merges `distilbert_multilingual` into `results/metrics.json`, appends `experiments.csv`, saves `confusion_matrix_distilbert.png`, model to Drive `DoppelCheck/models/distilbert/`, pushes `results/` back (needs Colab secret `GITHUB_TOKEN`). **Waiting for the Colab run.**
-- ⏭️ Next: Step 5 (URL module), then 6–10.
+- ✅ **Step 5** — `src/fetch_blocklists.py` (PhishTank, OpenPhish, Tranco → `data/blocklists/`, fails gracefully; blocked here, run on Colab/locally), `src/url_check.py` (extract_urls with hxxp/`[.]`/missing scheme; check_url: blocklist + 25-brand look-alike rules → red, shortener/IP/odd TLD/@/subdomains/punycode → yellow, official domain or Tranco top-10k → green; works without lists), `tests/test_url_check.py`: **39 tests pass** (16 phishing-style, 14 legit, extraction + list fixtures). pytest and tldextract pinned in requirements.txt.
+- ❌ **GitHub push still fails (403)** for both git and the GitHub connector – all commits exist only in the sandbox branch `claude/doppelcheck-repo-setup-li83sn`. Grant the Claude GitHub App access to the repo, then push.
+- ⏭️ Next: Step 6 (OCR + pipeline), then 7–10. Also: German CSVs still 0 real rows.
 
 ## Repository layout
 
