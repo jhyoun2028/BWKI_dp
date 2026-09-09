@@ -21,7 +21,8 @@
 - ❌ **GitHub push still fails (403)** for both git and the GitHub connector – all commits exist only in the sandbox branch `claude/doppelcheck-repo-setup-li83sn`. Grant the Claude GitHub App access to the repo, then push.
 - ✅ **Step 6** — `src/ocr.py` (easyocr de+en, CPU, lazy reader; weights DID download here via GitHub releases; 3 OCR repair rules for links: `http:ll`, dropped dot before TLD, `/` read as `l`), `src/pipeline.py` (baseline fallback active, DistilBERT loaded if `models/distilbert/` exists; verdict rules + `reason_de` ≤ 120 chars), `src/make_samples.py` → 3 screenshots in `data/samples/` (1080×1920). `tests/test_pipeline.py`: 13 tests incl. 3 real OCR tests → **52 tests pass** overall. Sample verdicts via OCR: DHL → red, Sparkasse → red, Familie → green.
 - ✅ **GitHub push works** since 2026-09-09 (Claude GitHub App installed).
-- ⏭️ Next: Step 7 (Gradio demo), Step 8 (API + Colab demo notebook + shortcut README), then 9–10. German CSVs still 0 real rows.
+- ✅ **Step 7** — `app/gradio_demo.py` (tabs „Text einfügen“ / „Screenshot hochladen“, big colored verdict box, reason sentence 28 px, URL list with levels, recognized OCR text). Launched on :7860 and both tabs called via gradio_client: DHL text → ROT, family_ok.png → GRÜN, bank_phishing.png → ROT.
+- ⏭️ Next: Step 8 (API + Colab demo notebook + shortcut README), then 9–10. German CSVs still 0 real rows.
 
 ## Repository layout
 
