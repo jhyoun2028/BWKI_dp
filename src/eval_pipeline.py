@@ -5,10 +5,12 @@ The processed test.csv holds masked texts (<URL>), so the original texts are loo
 in data/raw/german_*.csv via the same masking; rows whose link was already masked at
 collection time (*Link*) reach the URL layer without a real link – that is a known limit.
 
-    python src/eval_pipeline.py            # prints the table without and with the trusted-link cap
+    python src/eval_pipeline.py                       # default config, with/without the trusted-link cap
+    python src/eval_pipeline.py --yellow-p 0.22       # e.g. a threshold tuned by tune_threshold.py
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -49,7 +51,11 @@ def run(rows: pd.DataFrame, cap: bool) -> pd.DataFrame:
     return out
 
 
-def main() -> None:
+def main(yellow_p: float | None = None, red_p: float | None = None) -> None:
+    if yellow_p is not None:
+        pipeline.YELLOW_P = yellow_p
+    if red_p is not None:
+        pipeline.RED_P = red_p
     test = pd.read_csv(ROOT / "data" / "processed" / "test.csv")
     de = test[test.lang == "de"].copy()
     lookup = masked_to_raw()
@@ -59,7 +65,8 @@ def main() -> None:
     n_placeholder = int(de["text_raw"].str.contains(r"\*Link\*", case=False).sum())
     print(f"Deutsche Testzeilen: {len(de)} (Originaltext gefunden für {len(de) - missing}, "
           f"{n_placeholder} davon mit maskiertem Link *Link* – kein echter Link für die URL-Schicht)")
-    print(f"Modell: {pipeline.get_classifier().name}\n")
+    print(f"Modell: {pipeline.get_classifier().name}  |  "
+          f"Schwellen: gelb ab p>={pipeline.YELLOW_P}, rot ab p>={pipeline.RED_P}\n")
 
     for cap in (False, True):
         res = run(de, cap)
@@ -73,4 +80,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser(description="product-level evaluation of the full verdict logic")
+    ap.add_argument("--yellow-p", type=float, default=None, help="override pipeline.YELLOW_P")
+    ap.add_argument("--red-p", type=float, default=None, help="override pipeline.RED_P")
+    a = ap.parse_args()
+    main(yellow_p=a.yellow_p, red_p=a.red_p)

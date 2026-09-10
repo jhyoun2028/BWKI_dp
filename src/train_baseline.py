@@ -33,6 +33,8 @@ from url_check import URL_MASK  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 RESULTS = ROOT / "results"
+METRICS_PATH = RESULTS / "metrics.json"
+EXPERIMENTS_PATH = RESULTS / "experiments.csv"
 MODELS = ROOT / "models"
 
 SEED = 42
@@ -180,12 +182,12 @@ def main(no_url_token: bool = False) -> None:
     entry = {"date": date.today().isoformat(), "seed": SEED, "params": params,
              "val_f1_best": round(best_f1, 4), "train": m_train, "test": m_test,
              "test_de": m_test_de, "top_features": feats}
-    metrics_path = RESULTS / "metrics.json"
+    metrics_path = METRICS_PATH
     all_metrics = json.loads(metrics_path.read_text()) if metrics_path.exists() else {}
     all_metrics[key] = entry
     metrics_path.write_text(json.dumps(all_metrics, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    exp_path = RESULTS / "experiments.csv"
+    exp_path = EXPERIMENTS_PATH
     new_file = not exp_path.exists()
     with exp_path.open("a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
