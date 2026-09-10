@@ -102,7 +102,8 @@ def top_features(pipe: Pipeline, k: int = 10) -> dict[str, list[tuple[str, float
     return {"spam (label 1)": spam, "ham (label 0)": ham}
 
 
-def save_confusion_matrix(y_true, y_pred, path: Path) -> None:
+def save_confusion_matrix(y_true, y_pred, path: Path,
+                          title: str = "Baseline TF-IDF + LogReg – Testdaten") -> None:
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     fig, ax = plt.subplots(figsize=(4.2, 3.8))
     # eine Farbe, hell→dunkel (sequentiell); Zahlen in Textfarbe, nicht in Serienfarbe
@@ -113,7 +114,7 @@ def save_confusion_matrix(y_true, y_pred, path: Path) -> None:
     ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
     ax.set_xticklabels(["ham (0)", "phishing (1)"]); ax.set_yticklabels(["ham (0)", "phishing (1)"])
     ax.set_xlabel("vorhergesagt"); ax.set_ylabel("tatsächlich")
-    ax.set_title("Baseline TF-IDF + LogReg – Testdaten", fontsize=11)
+    ax.set_title(title, fontsize=11)
     for s in ax.spines.values():
         s.set_visible(False)
     ax.tick_params(length=0)
