@@ -53,6 +53,32 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.ui:ui-tooling-preview")
 
+    // OkHttp is pinned ON PURPOSE. Retrofit 2.11.0 declares okhttp 3.14.9, which is the
+    // Java-only release: it has no Kotlin companion extensions (toMediaTypeOrNull,
+    // toRequestBody) and is out of maintenance. The BOM lifts the whole OkHttp/Okio
+    // group to 4.12.0 (Kotlin, requires Android 5.0 / API 21 – we target minSdk 29).
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation("com.squareup.okhttp3:okhttp")
+
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+}
+
+/**
+ * Prints the OkHttp/Okio versions that actually end up on the runtime classpath:
+ *     ./gradlew :app:okhttpVersion
+ * Use this to confirm the pin above took effect instead of guessing.
+ */
+tasks.register("okhttpVersion") {
+    group = "verification"
+    description = "Prints the resolved OkHttp and Okio versions (debug runtime classpath)."
+    doLast {
+        configurations.getByName("debugRuntimeClasspath")
+            .resolvedConfiguration.resolvedArtifacts
+            .map { it.moduleVersion.id }
+            .filter { it.group == "com.squareup.okhttp3" || it.group == "com.squareup.okio" }
+            .distinctBy { "${it.group}:${it.name}" }
+            .sortedBy { it.name }
+            .forEach { println("${it.group}:${it.name}:${it.version}") }
+    }
 }

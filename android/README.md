@@ -68,6 +68,33 @@ signiert Android automatisch mit dem lokalen Debug-Schlüssel. Für eine Release
 einen eigenen Keystore anlegen und **außerhalb des Repositories** aufbewahren –
 `android/.gitignore` schließt `*.jks`, `*.keystore` und `keystore.properties` aus.
 
+## Abhängigkeiten: warum OkHttp gepinnt ist
+
+Retrofit 2.11.0 bringt von sich aus **okhttp 3.14.9** mit – die reine Java-Fassung.
+Dort gibt es die Kotlin-Erweiterungen `toMediaTypeOrNull` und `toRequestBody` nicht
+(die Klassen `MediaType$Companion` / `RequestBody$Companion` existieren schlicht nicht),
+und die Version wird seit 2020 nicht mehr gepflegt. Der erste Build scheiterte genau
+daran mit „Unresolved reference: Companion“.
+
+Deshalb hebt `app/build.gradle.kts` die ganze OkHttp-Gruppe über die Stückliste (BOM)
+auf **4.12.0** an:
+
+```kotlin
+implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+implementation("com.squareup.okhttp3:okhttp")
+```
+
+4.12.0 setzt Android 5.0 (API 21) voraus – unser `minSdk` ist 29, das passt. Mitgeliefert
+werden dadurch Okio 3.6.0 und kotlin-stdlib-jdk8 (die Kotlin-Version des Projekts, 1.9.24,
+gewinnt bei der Auflösung).
+
+Nachprüfen statt raten:
+
+```bash
+./gradlew :app:okhttpVersion
+# erwartet: com.squareup.okhttp3:okhttp:4.12.0 und com.squareup.okio:okio:3.6.0
+```
+
 ## Aufbau
 
 ```
@@ -113,9 +140,11 @@ gelesene Bildschirmtext, den die App unter dem Ergebnis anzeigt.
 
 ## Bekannte Einschränkungen
 
-- **Noch nicht kompiliert.** Die Entwicklungsumgebung dieses Repos hat kein Android SDK,
-  daher wurde der Code hier nur geschrieben und geprüft, aber nie gebaut oder auf einem
-  Gerät ausgeführt. Der erste `./gradlew assembleDebug`-Lauf kann Anpassungen nötig machen.
+- **Hier nicht kompilierbar.** Die Entwicklungsumgebung dieses Repos hat kein Android SDK,
+  der Code wird also geschrieben und geprüft, aber nicht gebaut. Der erste Build auf einem
+  echten Rechner (2026-09-12) scheiterte an vier Kotlin-Fehlern in `ScanViewModel.kt`
+  wegen der zu alten OkHttp-Version; behoben durch den Pin oben. Weitere Anpassungen beim
+  nächsten Build sind möglich.
 - Beim Teilen mehrerer Bilder auf einmal (`ACTION_SEND_MULTIPLE`) passiert nichts; die App
   verarbeitet bewusst nur ein einzelnes Bild.
 - Die App speichert nichts: keine Nachrichten, keine Bilder, keine Verläufe. Gesendet wird
