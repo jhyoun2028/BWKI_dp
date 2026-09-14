@@ -130,10 +130,16 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
         startActivity(VerdictNotifier.resultIntent(this, success.result))
     }
 
-    /** Visible text of the foreground app window, newline-joined. Empty if no window is found. */
+    /**
+     * Visible text of the foreground app window, newline-joined. Empty if no window is found.
+     * Debug builds dump every collected node to Logcat (tag `DoppelCheckScan`).
+     */
     fun collectScreenText(): String {
         val root = targetRoot() ?: return ""
-        return ScreenTextCollector.collect(root)
+        val entries = ScreenTextCollector.collectEntries(root)
+        val text = ScreenTextCollector.joinText(entries)
+        ScanDebugLog.dump(root.packageName, entries, text)
+        return text
     }
 
     /**
