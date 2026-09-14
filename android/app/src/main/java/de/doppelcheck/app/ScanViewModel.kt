@@ -29,6 +29,8 @@ sealed interface ScanState {
     data object Loading : ScanState
     data class Success(val result: ScanResult) : ScanState
     data class Failure(val message: String) : ScanState
+    /** Deliberately not checked (no message on screen): neutral, never a traffic light. */
+    data class NotChecked(val message: String) : ScanState
 }
 
 class ScanViewModel(app: Application) : AndroidViewModel(app) {

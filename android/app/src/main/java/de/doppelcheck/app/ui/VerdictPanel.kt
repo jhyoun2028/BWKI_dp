@@ -45,6 +45,7 @@ fun VerdictPanel(state: ScanState, onClose: () -> Unit, onDetails: () -> Unit) {
     val background = when (state) {
         is ScanState.Success -> verdictColor(state.result.verdict)
         is ScanState.Failure -> FailureBackground
+        is ScanState.NotChecked -> VerdictNeutral
         else -> LoadingBackground
     }
     Column(
@@ -64,6 +65,11 @@ fun VerdictPanel(state: ScanState, onClose: () -> Unit, onDetails: () -> Unit) {
             }
             is ScanState.Failure -> {
                 Text("Prüfung nicht möglich", style = WordStyle.copy(fontSize = 40.sp, lineHeight = 48.sp), color = OnVerdict, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(24.dp))
+                Text(state.message, style = ReasonStyle, color = OnVerdict, textAlign = TextAlign.Center)
+            }
+            is ScanState.NotChecked -> {
+                Text("Nicht geprüft", style = WordStyle.copy(fontSize = 40.sp, lineHeight = 48.sp), color = OnVerdict, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(24.dp))
                 Text(state.message, style = ReasonStyle, color = OnVerdict, textAlign = TextAlign.Center)
             }

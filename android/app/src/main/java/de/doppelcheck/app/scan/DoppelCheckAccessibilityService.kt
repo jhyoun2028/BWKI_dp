@@ -78,7 +78,7 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
 
     /** Explicit trigger: read the screen after [delayMs] (time for a panel to close) and check it. */
     fun scanScreen(delayMs: Long = 0) {
-        handler.postDelayed({ onScreenText(collectScreenText()) }, delayMs)
+        handler.postDelayed(::onScanTriggered, delayMs)
     }
 
     /** Closes the Quick Settings panel so the app underneath becomes visible again. */
@@ -90,19 +90,29 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** Sends the screen text to POST /scan-text and shows the verdict as overlay and notification. */
-    private fun onScreenText(text: String) {
+    /**
+     * Reads the screen and, only if it looks like a message ([MessageGate]), sends the text to
+     * POST /scan-text and shows the verdict as overlay and notification.
+     */
+    private fun onScanTriggered() {
         if (scanJob?.isActive == true) {
             // A tap while the previous check is still running brings its progress back.
             resultOverlay.show(ScanState.Loading)
             return
         }
+        val root = targetRoot()
+        val entries = root?.let(ScreenTextCollector::collectEntries).orEmpty()
+        val text = ScreenTextCollector.joinText(entries)
+        val gate = MessageGate.check(entries)
+        ScanDebugLog.dump(root?.packageName, entries, text, notes = listOf("gate passed=${gate.passed} rule=${gate.rule}"))
+
         val settings = SettingsStore(this)
         when {
+            // Home screen, launcher, settings …: no API call, and never a traffic light.
+            !gate.passed -> resultOverlay.show(ScanState.NotChecked(NO_MESSAGE))
             !settings.isConfigured -> showFailure(
                 "Noch keine Serveradresse eingetragen. Bitte in der DoppelCheck-App unter Einstellungen nachholen.",
             )
-            text.isBlank() -> showFailure("Auf dem Bildschirm wurde kein Text gefunden.")
             else -> scanJob = scope.launch {
                 resultOverlay.show(ScanState.Loading)
                 try {
@@ -131,18 +141,6 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Visible text of the foreground app window, newline-joined. Empty if no window is found.
-     * Debug builds dump every collected node to Logcat (tag `DoppelCheckScan`).
-     */
-    fun collectScreenText(): String {
-        val root = targetRoot() ?: return ""
-        val entries = ScreenTextCollector.collectEntries(root)
-        val text = ScreenTextCollector.joinText(entries)
-        ScanDebugLog.dump(root.packageName, entries, text)
-        return text
-    }
-
-    /**
      * Root node of the app window the user is looking at. Our own windows (bubble, result
      * overlay) and system UI are ignored: touching the bubble can make it the "active" window.
      */
@@ -158,6 +156,8 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
     }
 
     companion object {
+        private const val NO_MESSAGE = "Keine Nachricht erkannt. Öffnen Sie eine Nachricht und tippen Sie erneut."
+
         /** The running service, or null while it is switched off in the accessibility settings. */
         @Volatile
         var instance: DoppelCheckAccessibilityService? = null

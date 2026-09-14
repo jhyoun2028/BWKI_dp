@@ -112,6 +112,7 @@ fun ScanScreen(
                 )
             }
             is ScanState.Failure -> MessageBox(VerdictYellow, "Das hat nicht geklappt", state.message)
+            is ScanState.NotChecked -> MessageBox(VerdictNeutral, "Nicht geprüft", state.message)
             is ScanState.Success -> ResultBox(state.result)
         }
     }

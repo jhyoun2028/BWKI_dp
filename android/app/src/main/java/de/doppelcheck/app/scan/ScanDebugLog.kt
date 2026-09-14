@@ -20,7 +20,13 @@ object ScanDebugLog {
     /** Logcat truncates a single entry at ~4 kB; longer texts are split into numbered parts. */
     private const val CHUNK = 3000
 
-    fun dump(packageName: CharSequence?, entries: List<ScreenTextCollector.Entry>, sentText: String) {
+    /** [notes]: decisions taken on this scan (gate, …), printed just before the END marker. */
+    fun dump(
+        packageName: CharSequence?,
+        entries: List<ScreenTextCollector.Entry>,
+        sentText: String,
+        notes: List<String> = emptyList(),
+    ) {
         if (!BuildConfig.DEBUG) return
         Log.d(TAG, "===== BEGIN SCAN package=$packageName nodes=${entries.size} chars=${sentText.length} =====")
         entries.forEachIndexed { index, entry ->
@@ -34,6 +40,7 @@ object ScanDebugLog {
                 Log.d(TAG, if (part == 0) header + chunk else "#$index (cont. $part) | $chunk")
             }
         }
+        notes.forEach { Log.d(TAG, "-- $it") }
         Log.d(TAG, "===== END SCAN =====")
     }
 }

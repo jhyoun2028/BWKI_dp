@@ -98,7 +98,12 @@ sofort. Ist die Bedienungshilfe aus, erscheint ein Hinweis und die Bedienungshil
 
 1. Auslöser (runder Knopf, Kachel oder Assistenten-Geste) → der Dienst liest den Text der Vordergrund-App.
    Die eigenen Fenster von DoppelCheck werden dabei übersprungen.
-2. Kein Text oder keine Serveradresse → sofort eine verständliche Meldung.
+2. **Ist das überhaupt eine Nachricht?** (`scan/MessageGate.kt`) Nur wenn mindestens ein
+   Textblock ≥ 25 Zeichen aus einem nicht antippbaren Element kommt, das kein
+   Button/ImageButton/ImageView/EditText ist – oder ein Link oder eine Telefonnummer
+   vorkommt. Sonst (z. B. Startbildschirm) **keine Anfrage an den Server** und statt einer
+   Ampel die graue Anzeige „Keine Nachricht erkannt. Öffnen Sie eine Nachricht und tippen
+   Sie erneut.“ Keine Serveradresse → verständliche Meldung.
 3. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
    Vollbild-Anzeige „Prüfe …“ den Bildschirm ab (schließbar – das Ergebnis kommt dann nur
    als Benachrichtigung).
@@ -209,6 +214,8 @@ android/
     tile/ScanTileService.kt  Kachel in den Schnelleinstellungen: löst die Bildschirmprüfung aus
     scan/DoppelCheckAccessibilityService.kt  Bedienungshilfe, liest Text nur auf Auslöser
     scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
+    scan/MessageGate.kt    „Ist das eine Nachricht?“ – Sperre vor jeder Anfrage
+    scan/ScanDebugLog.kt   nur Debug-Build: jeder gelesene Knoten nach Logcat (Tag DoppelCheckScan)
     scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)
     scan/SystemSettings.kt öffnet die nötigen Systemeinstellungen, prüft die Assistenten-Rolle
     scan/ScreenScanTrigger.kt  Auslöser von außerhalb der Bedienungshilfe (Assistenten-Geste)
@@ -238,9 +245,25 @@ android/
 }
 ```
 
-`verdict` ist `red`, `yellow` oder `green` und färbt die Box. `reason_de` ist der Satz in
+`verdict` ist `red`, `yellow` oder `green` und färbt die Box. Jeder andere Wert (geplant:
+`unknown`, siehe unten) erscheint grau als „Nicht geprüft“ – nie als grün. `reason_de` ist der Satz in
 großer Schrift. Bei `POST /scan` kommt zusätzlich `text` zurück – der per Texterkennung
 gelesene Bildschirmtext, den die App unter dem Ergebnis anzeigt.
+
+## Noch nötig auf dem Server (nicht Teil dieses Unterprojekts)
+
+Die App prüft vor dem Senden, ob überhaupt eine Nachricht auf dem Bildschirm ist. Damit Web-Demo
+und API sich genauso verhalten, braucht `api/main.py` **dieselbe Sperre** vor dem Klassifikator –
+**noch nicht umgesetzt**, wird in der Python-Sitzung erledigt:
+
+- Bestanden, wenn mindestens eins gilt: eine Zeile (Trennung an `\n`) mit ≥ 25 Zeichen,
+  ein Link (`url_check.extract_urls` findet etwas) oder eine Telefonnummer
+  (Muster wie in der App: beginnt mit `+` oder `0`, dann 7–15 Ziffern, einzelne Leerzeichen,
+  `/` oder `-` dazwischen erlaubt).
+- Nicht bestanden → Klassifikator **nicht** aufrufen, Antwort
+  `{"verdict": "unknown", "score": null, "reason_de": "Kein Nachrichtentext erkannt.", "urls": [], "model": "<name>"}`.
+- Der Server sieht nur den zusammengefügten Text, nicht welches Element antippbar oder ein
+  Knopf war; die App-Regel ist daher etwas strenger. Die App zeigt `unknown` bereits grau an.
 
 ## Bekannte Einschränkungen
 

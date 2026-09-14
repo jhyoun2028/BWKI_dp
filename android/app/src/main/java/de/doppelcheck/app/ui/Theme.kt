@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.sp
 val VerdictRed = Color(0xFFB3261E)
 val VerdictYellow = Color(0xFF8A5A00)
 val VerdictGreen = Color(0xFF1B5E20)
+/** Not checked / verdict "unknown": neutral grey, so it can never be mistaken for green. */
+val VerdictNeutral = Color(0xFF455A64)
 val OnVerdict = Color.White
 
 private val Light = lightColorScheme(primary = Color(0xFF0B3D6B), onPrimary = Color.White)
@@ -40,23 +42,28 @@ fun DoppelCheckTheme(content: @Composable () -> Unit) {
     )
 }
 
+// Only an explicit "green" is shown as safe. Anything else (e.g. the server's "unknown" when it
+// found no message text) is neutral – an unexpected value must never turn into SICHER.
 fun verdictColor(verdict: String): Color = when (verdict) {
     "red" -> VerdictRed
     "yellow" -> VerdictYellow
-    else -> VerdictGreen
+    "green" -> VerdictGreen
+    else -> VerdictNeutral
 }
 
 fun verdictTitle(verdict: String): String = when (verdict) {
     "red" -> "ROT – Vorsicht, Betrug!"
     "yellow" -> "GELB – Bitte prüfen"
-    else -> "GRÜN – sieht unbedenklich aus"
+    "green" -> "GRÜN – sieht unbedenklich aus"
+    else -> "Nicht geprüft"
 }
 
 /** One-word verdict for the full-screen traffic-light panel and the notification title. */
 fun verdictWord(verdict: String): String = when (verdict) {
     "red" -> "GEFAHR"
     "yellow" -> "VORSICHT"
-    else -> "SICHER"
+    "green" -> "SICHER"
+    else -> "NICHT GEPRÜFT"
 }
 
 fun levelWord(level: String): String = when (level) {
