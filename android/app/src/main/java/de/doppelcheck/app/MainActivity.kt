@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.IntentCompat
+import de.doppelcheck.app.scan.SystemSettings
 import de.doppelcheck.app.ui.DoppelCheckTheme
+import de.doppelcheck.app.ui.ScreenScanSetup
 import de.doppelcheck.app.ui.ScanScreen
 import de.doppelcheck.app.ui.SettingsScreen
 
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
                     val input by viewModel.input.collectAsState()
                     val state by viewModel.state.collectAsState()
                     val baseUrl by viewModel.baseUrl.collectAsState()
+                    val setup by viewModel.setup.collectAsState()
 
                     if (showSettings) {
                         SettingsScreen(
@@ -41,6 +44,14 @@ class MainActivity : ComponentActivity() {
                             onSave = viewModel::saveBaseUrl,
                             onCheck = viewModel::checkConnection,
                             onBack = { showSettings = false },
+                            screenScanSetup = {
+                                ScreenScanSetup(
+                                    status = setup,
+                                    onOpenAccessibility = { SystemSettings.openAccessibility(this) },
+                                    onOpenOverlay = { SystemSettings.openOverlayPermission(this) },
+                                    onBubbleEnabledChange = viewModel::setBubbleEnabled,
+                                )
+                            },
                         )
                     } else {
                         ScanScreen(
@@ -56,6 +67,11 @@ class MainActivity : ComponentActivity() {
             }
         }
         handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshSetup()
     }
 
     /** launchMode is singleTask, so a second share arrives here instead of in onCreate. */

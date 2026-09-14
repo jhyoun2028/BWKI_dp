@@ -14,12 +14,18 @@ class SettingsStore(context: Context) {
 
     val isConfigured: Boolean get() = baseUrl.isNotBlank()
 
+    /** Whether the floating scan button is shown (needs the overlay permission as well). */
+    var bubbleEnabled: Boolean
+        get() = prefs.getBoolean(KEY_BUBBLE, true)
+        set(value) = prefs.edit { putBoolean(KEY_BUBBLE, value) }
+
     /** Full URL of an endpoint, e.g. endpoint("/scan") -> "https://abc.ngrok-free.app/scan". */
     fun endpoint(path: String): String = baseUrl.trimEnd('/') + path
 
     companion object {
         private const val PREFS = "doppelcheck"
         private const val KEY_BASE_URL = "base_url"
+        private const val KEY_BUBBLE = "bubble_enabled"
 
         /** Trim, drop a trailing slash and add https:// when the user typed only a host. */
         fun normalize(raw: String): String {

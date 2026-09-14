@@ -15,7 +15,8 @@ FastAPI aus diesem Repository (`api/main.py`) und zeigt die Ampel groß und lesb
 | Text prüfen | Nachricht einfügen oder tippen → **Prüfen** → `POST /scan-text` |
 | Geteilten Text prüfen | In einer anderen App „Teilen“ → DoppelCheck → wird sofort geprüft |
 | Geteilten Screenshot prüfen | Bild teilen → DoppelCheck → `POST /scan` als `multipart/form-data`, Feld **`file`** |
-| Schnellzugriff | Kachel in den Schnelleinstellungen (oben herunterwischen → Stift → DoppelCheck hinzufügen) |
+| Bildschirm prüfen: runder Knopf | Schwebender Knopf über allen Apps (Erlaubnis „Über anderen Apps anzeigen“) – antippen liest den sichtbaren Text, ziehen verschiebt ihn |
+| Bildschirm prüfen: Kachel | Kachel in den Schnelleinstellungen (oben herunterwischen → Stift → DoppelCheck hinzufügen). Antippen schließt das Feld und liest den Bildschirm; ist die Bedienungshilfe aus, öffnet sich stattdessen die App |
 
 ## Bildschirm prüfen – nichts wird im Hintergrund erfasst
 
@@ -127,7 +128,12 @@ android/
     ui/ScanScreen.kt       Hauptbildschirm: Eingabe, großer Knopf, Ampelbox, Linkliste
     ui/SettingsScreen.kt   Serveradresse eintragen und testen
     ui/Theme.kt            Farben und Schriftgrößen (nichts unter 20 sp)
-    tile/ScanTileService.kt  Kachel in den Schnelleinstellungen
+    ui/ScreenScanSetup.kt  Einstellungen: Einrichtung von „Bildschirm prüfen“
+    tile/ScanTileService.kt  Kachel in den Schnelleinstellungen: löst die Bildschirmprüfung aus
+    scan/DoppelCheckAccessibilityService.kt  Bedienungshilfe, liest Text nur auf Auslöser
+    scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
+    scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)
+    scan/SystemSettings.kt öffnet die nötigen Systemeinstellungen
 ```
 
 ## Antwort des Servers

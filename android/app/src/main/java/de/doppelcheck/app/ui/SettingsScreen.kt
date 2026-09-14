@@ -28,6 +28,7 @@ fun SettingsScreen(
     onSave: (String) -> Unit,
     onCheck: ((String) -> Unit) -> Unit,
     onBack: () -> Unit,
+    screenScanSetup: @Composable () -> Unit = {},
 ) {
     var value by remember { mutableStateOf(baseUrl) }
     var status by remember { mutableStateOf("") }
@@ -77,6 +78,9 @@ fun SettingsScreen(
         if (status.isNotBlank()) {
             Text(status, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 20.dp))
         }
+
+        Spacer(Modifier.height(32.dp))
+        screenScanSetup()
 
         Spacer(Modifier.height(24.dp))
         OutlinedButton(

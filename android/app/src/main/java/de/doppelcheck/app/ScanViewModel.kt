@@ -2,6 +2,7 @@ package de.doppelcheck.app
 
 import android.app.Application
 import android.net.Uri
+import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.doppelcheck.app.api.ApiClient
@@ -9,6 +10,8 @@ import de.doppelcheck.app.api.ErrorBody
 import de.doppelcheck.app.api.HealthResult
 import de.doppelcheck.app.api.ScanResult
 import de.doppelcheck.app.api.TextRequest
+import de.doppelcheck.app.scan.DoppelCheckAccessibilityService
+import de.doppelcheck.app.ui.SetupStatus
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +44,26 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _baseUrl = MutableStateFlow(settings.baseUrl)
     val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
+
+    private val _setup = MutableStateFlow(readSetup())
+    val setup: StateFlow<SetupStatus> = _setup.asStateFlow()
+
+    /** Called on every resume: the user may just be coming back from a system settings screen. */
+    fun refreshSetup() {
+        DoppelCheckAccessibilityService.instance?.updateBubble()
+        _setup.value = readSetup()
+    }
+
+    fun setBubbleEnabled(enabled: Boolean) {
+        settings.bubbleEnabled = enabled
+        refreshSetup()
+    }
+
+    private fun readSetup() = SetupStatus(
+        accessibilityOn = DoppelCheckAccessibilityService.instance != null,
+        overlayAllowed = Settings.canDrawOverlays(getApplication()),
+        bubbleEnabled = settings.bubbleEnabled,
+    )
 
     fun onInputChange(value: String) {
         _input.value = value
