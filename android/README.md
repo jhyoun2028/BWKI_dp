@@ -17,6 +17,7 @@ FastAPI aus diesem Repository (`api/main.py`) und zeigt die Ampel groß und lesb
 | Geteilten Screenshot prüfen | Bild teilen → DoppelCheck → `POST /scan` als `multipart/form-data`, Feld **`file`** |
 | Bildschirm prüfen: runder Knopf | Schwebender Knopf über allen Apps (Erlaubnis „Über anderen Apps anzeigen“) – antippen liest den sichtbaren Text, ziehen verschiebt ihn |
 | Bildschirm prüfen: Kachel | Kachel in den Schnelleinstellungen (oben herunterwischen → Stift → DoppelCheck hinzufügen). Antippen schließt das Feld und liest den Bildschirm; ist die Bedienungshilfe aus, öffnet sich stattdessen die App |
+| Bildschirm prüfen: Assistenten-Geste | Mit DoppelCheck als digitalem Assistenten: Startknopf lange drücken bzw. bei Gestensteuerung von einer unteren Ecke schräg nach oben wischen |
 
 Jede Anfrage trägt den Kopfzeileneintrag `ngrok-skip-browser-warning: true`. Ohne ihn
 antwortet ein kostenloser ngrok-Tunnel mit einer HTML-Warnseite statt mit unserem JSON.
@@ -38,9 +39,64 @@ der Reihe nach, doppelte Zeilen entfernt).
 - Ausnahme nur für Entwickler: In **Debug-Builds** schreibt `ApiClient` Anfrage und Antwort
   (also auch den gelesenen Text) nach Logcat. Release-Builds tun das nicht.
 
+## Bildschirm prüfen einrichten (einmalig)
+
+Vorher die Serveradresse eintragen (nächster Abschnitt). Alle drei Schalter sind auch in der
+App erreichbar: **Zahnrad → „Bildschirm prüfen einrichten“** zeigt, was schon erledigt ist,
+und öffnet mit je einem Knopf die richtige Systemseite. Die Menünamen unten stammen von
+Android ohne Herstelleroberfläche; bei Samsung & Co. heißen sie teils etwas anders
+(Hinweise in Klammern).
+
+**1. Bedienungshilfe einschalten** (Pflicht – ohne sie kann nichts gelesen werden)
+
+1. *Einstellungen → Bedienungshilfen* öffnen.
+2. *Installierte Apps* bzw. *Heruntergeladene Apps* antippen
+   (Samsung: *Installierte Apps*).
+3. **DoppelCheck – Bildschirm prüfen** antippen und den Schalter einschalten.
+4. Den Warnhinweis „volle Kontrolle“ mit **Zulassen** bestätigen.
+   Android 13 und neuer: Ist der Schalter ausgegraut („Eingeschränkte Einstellung“), weil die
+   APK nicht aus dem Play Store kommt: *Einstellungen → Apps → DoppelCheck* → oben rechts ⋮ →
+   **Eingeschränkte Einstellungen zulassen**, dann Schritt 3 wiederholen.
+
+**2. Über anderen Apps anzeigen erlauben** (Pflicht für den runden Knopf)
+
+1. *Einstellungen → Apps → DoppelCheck* öffnen.
+2. *Über anderen Apps einblenden* bzw. *Über anderen Apps anzeigen* antippen
+   (Samsung: unter *Apps → ⋮ → Spezieller Zugriff → Über anderen Apps anzeigen*).
+3. Schalter für DoppelCheck einschalten.
+
+Danach erscheint der runde Knopf am rechten Rand. Er lässt sich an eine beliebige Stelle
+ziehen und in den DoppelCheck-Einstellungen mit „Runden Knopf anzeigen“ ausblenden.
+Ab Android 13 zusätzlich beim ersten App-Start **Benachrichtigungen zulassen**.
+
+**3. Als Assistent festlegen** (freiwillig – für die Geste)
+
+1. *Einstellungen → Apps → Standard-Apps* öffnen
+   (Samsung: *Apps → Standard-Apps auswählen*).
+2. *Digitaler Assistent* bzw. *Assistent & Spracheingabe* antippen
+   (Samsung: *Digitale Assistenz-App*).
+3. *Digitale Assistent-App* → **DoppelCheck** auswählen und bestätigen.
+4. Auslösen: bei drei Navigationsknöpfen **Startknopf lange drücken**, bei Gestensteuerung
+   **von einer unteren Bildschirmecke schräg nach oben wischen**.
+
+Wichtig: Es gibt nur **einen** Assistenten. Wer DoppelCheck wählt, ersetzt damit Google
+Assistant/Gemini bzw. Bixby für diese Geste („Hey Google“ funktioniert dann nicht mehr).
+Rückgängig: dieselbe Einstellung wieder auf den bisherigen Assistenten stellen. Die Kachel
+und der runde Knopf funktionieren auch ganz ohne diesen Schritt.
+
+Technisch meldet sich DoppelCheck **nur** über eine unsichtbare Activity mit dem
+Intent-Filter `android.intent.action.ASSIST` an (`assist/AssistActivity.kt`), bewusst
+**ohne** `VoiceInteractionService`: Ein solcher Dienst muss einen Spracherkenner mitbringen,
+und Android macht den Spracherkenner des Assistenten zum Systemstandard – die Spracheingabe
+anderer Apps ginge dann kaputt. Laut Android-Quelltext (`AssistantRoleBehavior`) reicht die
+exportierte ASSIST-Activity, um in der Auswahl zu erscheinen. Die Activity liest selbst
+nichts; sie ruft dieselbe Prüfung der Bedienungshilfe auf wie der Knopf und schließt sich
+sofort. Ist die Bedienungshilfe aus, erscheint ein Hinweis und die Bedienungshilfen-Seite
+öffnet sich.
+
 ### Ablauf einer Prüfung
 
-1. Auslöser (runder Knopf oder Kachel) → der Dienst liest den Text der Vordergrund-App.
+1. Auslöser (runder Knopf, Kachel oder Assistenten-Geste) → der Dienst liest den Text der Vordergrund-App.
    Die eigenen Fenster von DoppelCheck werden dabei übersprungen.
 2. Kein Text oder keine Serveradresse → sofort eine verständliche Meldung.
 3. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
@@ -154,7 +210,9 @@ android/
     scan/DoppelCheckAccessibilityService.kt  Bedienungshilfe, liest Text nur auf Auslöser
     scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
     scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)
-    scan/SystemSettings.kt öffnet die nötigen Systemeinstellungen
+    scan/SystemSettings.kt öffnet die nötigen Systemeinstellungen, prüft die Assistenten-Rolle
+    scan/ScreenScanTrigger.kt  Auslöser von außerhalb der Bedienungshilfe (Assistenten-Geste)
+    assist/AssistActivity.kt  unsichtbare ACTION_ASSIST-Activity → dieselbe Bildschirmprüfung
     scan/ResultOverlay.kt  Vollbild-Fenster über der aktuellen App mit der Ampel
     scan/VerdictNotifier.kt  Ergebnis als Benachrichtigung
     ui/VerdictPanel.kt     große Ampel: SICHER / VORSICHT / GEFAHR + reason_de
@@ -191,6 +249,14 @@ gelesene Bildschirmtext, den die App unter dem Ergebnis anzeigt.
   echten Rechner (2026-09-12) scheiterte an vier Kotlin-Fehlern in `ScanViewModel.kt`
   wegen der zu alten OkHttp-Version; behoben durch den Pin oben. Weitere Anpassungen beim
   nächsten Build sind möglich.
+- **„Bildschirm prüfen“ ist gebaut, aber noch nicht auf einem Gerät getestet.**
+  `./gradlew :app:assembleDebug` läuft fehlerfrei (2026-09-14), ein Handy oder Emulator stand
+  dabei nicht zur Verfügung. Zu prüfen: Wartezeiten nach dem Schließen der Schnelleinstellungen
+  (600 ms) und nach der Assistenten-Geste (400 ms), die Auswahl des richtigen Fensters bei
+  geteiltem Bildschirm und die Menünamen bei Samsung.
+- Gelesen wird nur, was die App als Text an Android meldet. Bilder, Text in Grafiken und
+  Apps, die ihre Oberfläche selbst zeichnen (manche Spiele, einige Banking-Apps mit
+  Bildschirmschutz), liefern wenig oder nichts – dann bleibt der Weg über „Screenshot teilen“.
 - Beim Teilen mehrerer Bilder auf einmal (`ACTION_SEND_MULTIPLE`) passiert nichts; die App
   verarbeitet bewusst nur ein einzelnes Bild.
 - Die App speichert nichts: keine Nachrichten, keine Bilder, keine Verläufe. Gesendet wird

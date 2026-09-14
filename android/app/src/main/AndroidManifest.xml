@@ -55,6 +55,21 @@
             </intent-filter>
         </service>
 
+        <!-- Assistenten-Geste (DoppelCheck als digitaler Assistent) löst die Bildschirmprüfung aus -->
+        <activity
+            android:name=".assist.AssistActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="@string/assist_label"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- Liest den Bildschirmtext, aber nur auf ausdrücklichen Auslöser (keine Ereignisse) -->
         <service
             android:name=".scan.DoppelCheckAccessibilityService"

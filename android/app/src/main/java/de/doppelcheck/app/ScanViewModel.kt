@@ -11,6 +11,7 @@ import de.doppelcheck.app.api.ScanResult
 import de.doppelcheck.app.api.TextRequest
 import de.doppelcheck.app.api.describeError
 import de.doppelcheck.app.scan.DoppelCheckAccessibilityService
+import de.doppelcheck.app.scan.SystemSettings
 import de.doppelcheck.app.ui.SetupStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +62,7 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         accessibilityOn = DoppelCheckAccessibilityService.instance != null,
         overlayAllowed = Settings.canDrawOverlays(getApplication()),
         bubbleEnabled = settings.bubbleEnabled,
+        isAssistant = SystemSettings.isAssistant(getApplication()),
     )
 
     fun onInputChange(value: String) {

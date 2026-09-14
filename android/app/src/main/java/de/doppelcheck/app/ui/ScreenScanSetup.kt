@@ -21,6 +21,7 @@ data class SetupStatus(
     val accessibilityOn: Boolean = false,
     val overlayAllowed: Boolean = false,
     val bubbleEnabled: Boolean = true,
+    val isAssistant: Boolean = false,
 )
 
 /** Settings section: status and shortcuts to the system screens needed for the screen scan. */
@@ -29,12 +30,13 @@ fun ScreenScanSetup(
     status: SetupStatus,
     onOpenAccessibility: () -> Unit,
     onOpenOverlay: () -> Unit,
+    onOpenAssistant: () -> Unit,
     onBubbleEnabledChange: (Boolean) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("Bildschirm prüfen einrichten", style = MaterialTheme.typography.headlineMedium)
         Text(
-            "Einmalig nötig, damit der runde Knopf und die Kachel den Bildschirm prüfen können. " +
+            "Einmalig nötig, damit runder Knopf, Kachel und Assistenten-Geste den Bildschirm prüfen können. " +
                 "Gelesen wird nur, wenn Sie selbst tippen.",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 8.dp),
@@ -55,6 +57,14 @@ fun ScreenScanSetup(
             todoText = "nicht erlaubt – für den runden Knopf und die große Ampel nötig",
             buttonText = "Erlaubnis öffnen",
             onClick = onOpenOverlay,
+        )
+        SetupStep(
+            title = "3. Als Assistent festlegen (freiwillig)",
+            done = status.isAssistant,
+            doneText = "festgelegt – die Assistenten-Geste prüft jetzt den Bildschirm",
+            todoText = "nicht festgelegt – „Digitaler Assistent“ auf DoppelCheck stellen",
+            buttonText = "Assistent auswählen",
+            onClick = onOpenAssistant,
         )
 
         Row(

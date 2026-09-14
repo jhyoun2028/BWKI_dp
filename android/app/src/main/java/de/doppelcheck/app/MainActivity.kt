@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
                                     status = setup,
                                     onOpenAccessibility = { SystemSettings.openAccessibility(this) },
                                     onOpenOverlay = { SystemSettings.openOverlayPermission(this) },
+                                    onOpenAssistant = { SystemSettings.openAssistant(this) },
                                     onBubbleEnabledChange = viewModel::setBubbleEnabled,
                                 )
                             },

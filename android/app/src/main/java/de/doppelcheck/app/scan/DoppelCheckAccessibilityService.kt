@@ -27,8 +27,9 @@ import kotlinx.coroutines.launch
  *
  * `res/xml/accessibility_service_config.xml` declares no event types, so the system never
  * delivers accessibility events to this service: nothing is observed or captured in the
- * background. Text is read only in [scanScreen], which is called by the floating bubble
- * and the Quick Settings tile. The text is sent to POST /scan-text and kept nowhere else.
+ * background. Text is read only in [scanScreen], which is called by the floating bubble,
+ * the Quick Settings tile and the assistant gesture. The text is sent to POST /scan-text
+ * and kept nowhere else.
  */
 class DoppelCheckAccessibilityService : AccessibilityService() {
 
