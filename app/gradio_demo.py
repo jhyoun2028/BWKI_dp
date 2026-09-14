@@ -35,9 +35,11 @@ CSS = """
 .links th { background: #f1f3f5; font-weight: 700; }
 .links td.stufe { font-weight: 700; white-space: nowrap; }
 .links p.hinweis { font-size: 20px; margin: 10px 0 0 0; }
+button[role="tab"] { font-size: 22px !important; font-weight: 700; padding: 12px 18px !important; }
 #eingabe textarea { font-size: 22px !important; line-height: 1.45; }
-#pruefen { font-size: 24px !important; font-weight: 700; min-height: 68px; }
+.pruefen { font-size: 24px !important; font-weight: 700; min-height: 68px; }
 label span { font-size: 20px !important; }
+#bild .wrap { font-size: 22px !important; }
 footer { display: none !important; }
 """
 
@@ -92,8 +94,13 @@ def check_text(text: str) -> str:
 def check_image(image) -> tuple[str, str]:
     if image is None:
         return hint("Bitte zuerst einen Screenshot hochladen.", COLORS["yellow"], "HINWEIS"), ""
-    import ocr  # lazy: heavy import
-    text = ocr.extract_text(image)
+    try:
+        import ocr  # lazy: heavy import
+        text = ocr.extract_text(image)
+    except Exception:
+        # Gradio would otherwise show an English error popup.
+        return hint("Die Texterkennung funktioniert gerade nicht. Bitte den Text einfügen.",
+                    COLORS["yellow"], "HINWEIS"), ""
     if not text.strip():
         return hint("Auf dem Bild wurde kein Text erkannt.", COLORS["yellow"], "HINWEIS"), ""
     return render(pipeline.analyze(text)), text
@@ -110,13 +117,18 @@ def build_app() -> gr.Blocks:
                 label="Nachricht", lines=6, elem_id="eingabe",
                 placeholder="Text der SMS, E-Mail oder WhatsApp-Nachricht hier einfügen …",
             )
-            btn_t = gr.Button("Prüfen", variant="primary", elem_id="pruefen")
+            btn_t = gr.Button("Prüfen", variant="primary", elem_classes="pruefen")
             out_t = gr.HTML(START_TEXT)
             btn_t.click(check_text, inputs=txt, outputs=out_t)
 
         with gr.Tab("Screenshot hochladen"):
-            img = gr.Image(label="Screenshot", type="pil")
-            btn_i = gr.Button("Prüfen", variant="primary", elem_id="pruefen")
+            # Upload only (no webcam/clipboard icons) and a German placeholder: Gradio's own
+            # upload text follows the browser language and would be English on many devices.
+            img = gr.Image(
+                label="Screenshot", type="pil", sources=["upload"], elem_id="bild",
+                placeholder="Screenshot hierher ziehen oder hier tippen, um ein Bild auszuwählen",
+            )
+            btn_i = gr.Button("Prüfen", variant="primary", elem_classes="pruefen")
             out_i = gr.HTML(START_IMAGE)
             ocr_text = gr.Textbox(label="Erkannter Text", lines=4, interactive=False)
             btn_i.click(check_image, inputs=img, outputs=[out_i, ocr_text])
