@@ -33,6 +33,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true          // BuildConfig.DEBUG gates the HTTP logging in ApiClient
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
@@ -59,6 +60,8 @@ dependencies {
     // group to 4.12.0 (Kotlin, requires Android 5.0 / API 21 – we target minSdk 29).
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     implementation("com.squareup.okhttp3:okhttp")
+    // Request/response logging to Logcat; only switched on in debug builds (see ApiClient).
+    implementation("com.squareup.okhttp3:logging-interceptor")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
