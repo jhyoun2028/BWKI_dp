@@ -17,6 +17,21 @@ FastAPI aus diesem Repository (`api/main.py`) und zeigt die Ampel groß und lesb
 | Geteilten Screenshot prüfen | Bild teilen → DoppelCheck → `POST /scan` als `multipart/form-data`, Feld **`file`** |
 | Schnellzugriff | Kachel in den Schnelleinstellungen (oben herunterwischen → Stift → DoppelCheck hinzufügen) |
 
+## Bildschirm prüfen – nichts wird im Hintergrund erfasst
+
+Die Bedienungshilfe `DoppelCheckAccessibilityService` liest den **sichtbaren Text** der App,
+die gerade im Vordergrund ist (`text` und `contentDescription` jedes sichtbaren Elements,
+der Reihe nach, doppelte Zeilen entfernt).
+
+- **Nur auf ausdrücklichen Auslöser.** `res/xml/accessibility_service_config.xml` meldet
+  **keine** Ereignistypen an (`accessibilityEventTypes` fehlt absichtlich). Android schickt
+  dem Dienst daher keine Ereignisse – er beobachtet nichts, protokolliert nichts und reagiert
+  auf nichts, solange Sie keine Prüfung starten.
+- **Nichts wird gespeichert.** Der gelesene Text liegt nur im Arbeitsspeicher, bis die Prüfung
+  abgeschlossen ist.
+- Android zeigt beim Einschalten trotzdem den allgemeinen Warnhinweis „volle Kontrolle über
+  das Gerät“ – dieser Text ist für alle Bedienungshilfen gleich und lässt sich nicht ändern.
+
 Jede Anfrage trägt den Kopfzeileneintrag `ngrok-skip-browser-warning: true`. Ohne ihn
 antwortet ein kostenloser ngrok-Tunnel mit einer HTML-Warnseite statt mit unserem JSON.
 

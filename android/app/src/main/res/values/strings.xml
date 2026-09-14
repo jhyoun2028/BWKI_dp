@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">DoppelCheck</string>
     <string name="tile_label">DoppelCheck</string>
+    <string name="a11y_label">DoppelCheck – Bildschirm prüfen</string>
+    <string name="a11y_description">Liest den sichtbaren Bildschirmtext nur in dem Moment, in dem Sie selbst eine Prüfung starten, und schickt ihn zur Prüfung an die eingetragene DoppelCheck-Serveradresse. Im Hintergrund wird nichts mitgelesen und nichts gespeichert.</string>
 </resources>

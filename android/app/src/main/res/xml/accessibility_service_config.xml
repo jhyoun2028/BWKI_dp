@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Deliberately NO android:accessibilityEventTypes: the service subscribes to no events and
+    therefore observes nothing in the background. It reads the window content only when the
+    user triggers a scan (canRetrieveWindowContent).
+    flagRetrieveInteractiveWindows: lets the service pick the app window underneath our own
+    bubble/overlay. flagIncludeNotImportantViews: many apps mark text views "not important".
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/a11y_description"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:notificationTimeout="0"
+    android:settingsActivity="de.doppelcheck.app.MainActivity" />
