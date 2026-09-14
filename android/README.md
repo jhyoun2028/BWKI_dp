@@ -110,10 +110,15 @@ sofort. Ist die Bedienungshilfe aus, erscheint ein Hinweis und die Bedienungshil
    vorkommt. Sonst (z. B. Startbildschirm) **keine Anfrage an den Server** und statt einer
    Ampel die graue Anzeige „Keine Nachricht erkannt. Öffnen Sie eine Nachricht und tippen
    Sie erneut.“ Keine Serveradresse → verständliche Meldung.
-4. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
+4. **Sprache** (`scan/ScriptCheck.kt`): Sind mehr als 20 % der Buchstaben Hangul, chinesische/
+   japanische Schriftzeichen oder Kyrillisch, wird ebenfalls **nicht** gesendet – grau:
+   „Diese Sprache unterstützt DoppelCheck noch nicht (nur Deutsch und Englisch).“ Der Klassifikator
+   kennt nur Deutsch und Englisch. Geprüft wird nach Schritt 3, damit ein koreanischer
+   Startbildschirm „Keine Nachricht erkannt“ meldet.
+5. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
    Vollbild-Anzeige „Prüfe …“ den Bildschirm ab (schließbar – das Ergebnis kommt dann nur
    als Benachrichtigung).
-5. Ergebnis **zweifach**:
+6. Ergebnis **zweifach**:
    - **Vollbild-Ampel** über der aktuellen App: Hintergrund in Ampelfarbe, darauf groß
      **SICHER** (grün), **VORSICHT** (gelb) oder **GEFAHR** (rot) und darunter `reason_de`
      in 30 sp. Nichts auf dieser Anzeige ist kleiner als 24 sp. „Schließen“ oder die
@@ -221,6 +226,7 @@ android/
     scan/DoppelCheckAccessibilityService.kt  Bedienungshilfe, liest Text nur auf Auslöser
     scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
     scan/ChromeFilter.kt   entfernt Knöpfe, Uhrzeiten, Kopfzeile, Eingabefeld vor dem Senden
+    scan/ScriptCheck.kt    Schriftsystem-Prüfung: Koreanisch/CJK/Kyrillisch wird nicht gesendet
     scan/MessageGate.kt    „Ist das eine Nachricht?“ – Sperre vor jeder Anfrage
     scan/ScanDebugLog.kt   nur Debug-Build: jeder gelesene Knoten nach Logcat (Tag DoppelCheckScan)
     scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)

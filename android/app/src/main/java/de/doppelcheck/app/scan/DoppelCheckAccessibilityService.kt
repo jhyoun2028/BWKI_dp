@@ -111,14 +111,22 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
         }
         val text = ScreenTextCollector.joinText(kept)
         val gate = MessageGate.check(kept)
+        val script = ScriptCheck.check(text)
         ScanDebugLog.dump(
             root?.packageName, collected, dropReasons, settings.chromeFilterEnabled, text,
-            notes = listOf("gate passed=${gate.passed} rule=${gate.rule}"),
+            notes = listOf(
+                "gate passed=${gate.passed} rule=${gate.rule}",
+                "script dominant=${script.dominant} unsupportedShare=${"%.2f".format(script.unsupportedShare)} " +
+                    "letters=${script.letters} supported=${script.supported}",
+            ),
         )
 
+        // Gate before language: a Korean home screen is "no message", not "unsupported language".
         when {
             // Home screen, launcher, settings …: no API call, and never a traffic light.
             !gate.passed -> resultOverlay.show(ScanState.NotChecked(NO_MESSAGE))
+            // The classifier only knows German and English; any score would be meaningless.
+            !script.supported -> resultOverlay.show(ScanState.NotChecked(UNSUPPORTED_LANGUAGE))
             !settings.isConfigured -> showFailure(
                 "Noch keine Serveradresse eingetragen. Bitte in der DoppelCheck-App unter Einstellungen nachholen.",
             )
@@ -166,6 +174,7 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val NO_MESSAGE = "Keine Nachricht erkannt. Öffnen Sie eine Nachricht und tippen Sie erneut."
+        private const val UNSUPPORTED_LANGUAGE = "Diese Sprache unterstützt DoppelCheck noch nicht (nur Deutsch und Englisch)."
 
         /** The running service, or null while it is switched off in the accessibility settings. */
         @Volatile
