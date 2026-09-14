@@ -18,6 +18,9 @@ FastAPI aus diesem Repository (`api/main.py`) und zeigt die Ampel groß und lesb
 | Bildschirm prüfen: runder Knopf | Schwebender Knopf über allen Apps (Erlaubnis „Über anderen Apps anzeigen“) – antippen liest den sichtbaren Text, ziehen verschiebt ihn |
 | Bildschirm prüfen: Kachel | Kachel in den Schnelleinstellungen (oben herunterwischen → Stift → DoppelCheck hinzufügen). Antippen schließt das Feld und liest den Bildschirm; ist die Bedienungshilfe aus, öffnet sich stattdessen die App |
 
+Jede Anfrage trägt den Kopfzeileneintrag `ngrok-skip-browser-warning: true`. Ohne ihn
+antwortet ein kostenloser ngrok-Tunnel mit einer HTML-Warnseite statt mit unserem JSON.
+
 ## Bildschirm prüfen – nichts wird im Hintergrund erfasst
 
 Die Bedienungshilfe `DoppelCheckAccessibilityService` liest den **sichtbaren Text** der App,
@@ -32,9 +35,27 @@ der Reihe nach, doppelte Zeilen entfernt).
   abgeschlossen ist.
 - Android zeigt beim Einschalten trotzdem den allgemeinen Warnhinweis „volle Kontrolle über
   das Gerät“ – dieser Text ist für alle Bedienungshilfen gleich und lässt sich nicht ändern.
+- Ausnahme nur für Entwickler: In **Debug-Builds** schreibt `ApiClient` Anfrage und Antwort
+  (also auch den gelesenen Text) nach Logcat. Release-Builds tun das nicht.
 
-Jede Anfrage trägt den Kopfzeileneintrag `ngrok-skip-browser-warning: true`. Ohne ihn
-antwortet ein kostenloser ngrok-Tunnel mit einer HTML-Warnseite statt mit unserem JSON.
+### Ablauf einer Prüfung
+
+1. Auslöser (runder Knopf oder Kachel) → der Dienst liest den Text der Vordergrund-App.
+   Die eigenen Fenster von DoppelCheck werden dabei übersprungen.
+2. Kein Text oder keine Serveradresse → sofort eine verständliche Meldung.
+3. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
+   Vollbild-Anzeige „Prüfe …“ den Bildschirm ab (schließbar – das Ergebnis kommt dann nur
+   als Benachrichtigung).
+4. Ergebnis **zweifach**:
+   - **Vollbild-Ampel** über der aktuellen App: Hintergrund in Ampelfarbe, darauf groß
+     **SICHER** (grün), **VORSICHT** (gelb) oder **GEFAHR** (rot) und darunter `reason_de`
+     in 30 sp. Nichts auf dieser Anzeige ist kleiner als 24 sp. „Schließen“ oder die
+     Zurück-Taste blenden sie aus, „Details in der App“ öffnet das Ergebnis mit Linkliste.
+   - **Benachrichtigung** mit demselben Wort und Satz; Antippen öffnet die Details in der App.
+     Ab Android 13 fragt die App beim ersten Start nach der Erlaubnis dafür.
+
+Ohne die Erlaubnis „Über anderen Apps anzeigen“ zeigt die Bedienungshilfe die Vollbild-Ampel
+trotzdem an (als Bedienungshilfen-Fenster); nur der runde Knopf braucht die Erlaubnis zwingend.
 
 ## Serveradresse eintragen (einmalig)
 
@@ -134,6 +155,10 @@ android/
     scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
     scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)
     scan/SystemSettings.kt öffnet die nötigen Systemeinstellungen
+    scan/ResultOverlay.kt  Vollbild-Fenster über der aktuellen App mit der Ampel
+    scan/VerdictNotifier.kt  Ergebnis als Benachrichtigung
+    ui/VerdictPanel.kt     große Ampel: SICHER / VORSICHT / GEFAHR + reason_de
+    api/ErrorText.kt       Fehlertexte, gemeinsam für App und Bedienungshilfe
 ```
 
 ## Antwort des Servers

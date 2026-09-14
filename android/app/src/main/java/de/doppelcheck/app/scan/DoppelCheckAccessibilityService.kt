@@ -9,8 +9,18 @@ import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
-import android.widget.Toast
+import de.doppelcheck.app.ScanState
 import de.doppelcheck.app.SettingsStore
+import de.doppelcheck.app.api.ApiClient
+import de.doppelcheck.app.api.TextRequest
+import de.doppelcheck.app.api.describeError
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
 
 /**
  * Reads the text of the app the user is looking at – but only when explicitly asked to.
@@ -18,12 +28,16 @@ import de.doppelcheck.app.SettingsStore
  * `res/xml/accessibility_service_config.xml` declares no event types, so the system never
  * delivers accessibility events to this service: nothing is observed or captured in the
  * background. Text is read only in [scanScreen], which is called by the floating bubble
- * and the Quick Settings tile.
+ * and the Quick Settings tile. The text is sent to POST /scan-text and kept nowhere else.
  */
 class DoppelCheckAccessibilityService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var scanJob: Job? = null
     private var bubble: BubbleOverlay? = null
+    private val resultOverlay by lazy { ResultOverlay(this, onDetails = ::openDetails) }
+    private val notifier by lazy { VerdictNotifier(this) }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -45,6 +59,8 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
     private fun shutDown() {
         instance = null
         handler.removeCallbacksAndMessages(null)
+        scope.coroutineContext.cancelChildren()
+        resultOverlay.hide()
         bubble?.hide()
         bubble = null
     }
@@ -73,9 +89,44 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
         }
     }
 
+    /** Sends the screen text to POST /scan-text and shows the verdict as overlay and notification. */
     private fun onScreenText(text: String) {
-        val lines = if (text.isEmpty()) 0 else text.lines().size
-        Toast.makeText(this, "$lines Zeilen gelesen", Toast.LENGTH_SHORT).show()
+        if (scanJob?.isActive == true) {
+            // A tap while the previous check is still running brings its progress back.
+            resultOverlay.show(ScanState.Loading)
+            return
+        }
+        val settings = SettingsStore(this)
+        when {
+            !settings.isConfigured -> showFailure(
+                "Noch keine Serveradresse eingetragen. Bitte in der DoppelCheck-App unter Einstellungen nachholen.",
+            )
+            text.isBlank() -> showFailure("Auf dem Bildschirm wurde kein Text gefunden.")
+            else -> scanJob = scope.launch {
+                resultOverlay.show(ScanState.Loading)
+                try {
+                    val result = ApiClient.api.scanText(settings.endpoint("/scan-text"), TextRequest(text))
+                    notifier.showResult(result)
+                    // Closed while waiting: the notification alone is enough, do not pop up again.
+                    if (resultOverlay.isShowing) resultOverlay.show(ScanState.Success(result))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    val message = describeError(e)
+                    notifier.showFailure(message)
+                    if (resultOverlay.isShowing) resultOverlay.show(ScanState.Failure(message))
+                }
+            }
+        }
+    }
+
+    private fun showFailure(message: String) {
+        notifier.showFailure(message)
+        resultOverlay.show(ScanState.Failure(message))
+    }
+
+    private fun openDetails(success: ScanState.Success) {
+        startActivity(VerdictNotifier.resultIntent(this, success.result))
     }
 
     /** Visible text of the foreground app window, newline-joined. Empty if no window is found. */

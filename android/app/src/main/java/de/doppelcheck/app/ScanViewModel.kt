@@ -6,13 +6,12 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.doppelcheck.app.api.ApiClient
-import de.doppelcheck.app.api.ErrorBody
 import de.doppelcheck.app.api.HealthResult
 import de.doppelcheck.app.api.ScanResult
 import de.doppelcheck.app.api.TextRequest
+import de.doppelcheck.app.api.describeError
 import de.doppelcheck.app.scan.DoppelCheckAccessibilityService
 import de.doppelcheck.app.ui.SetupStatus
-import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +21,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.HttpException
 import java.io.IOException
 
 sealed interface ScanState {
@@ -78,6 +76,11 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = ScanState.Idle
     }
 
+    /** Result of a screen scan, opened from its notification or the overlay's details button. */
+    fun showResult(result: ScanResult) {
+        _state.value = ScanState.Success(result)
+    }
+
     /** Scan typed or shared text. */
     fun scanText(text: String) {
         _input.value = text
@@ -116,7 +119,7 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
                     val h: HealthResult = ApiClient.api.health(settings.endpoint("/health"))
                     "Verbindung steht. Modell: ${h.model}, Texterkennung: ${if (h.ocr) "bereit" else "nicht verfügbar"}."
                 } catch (e: Exception) {
-                    "Keine Verbindung: ${describe(e)}"
+                    "Keine Verbindung: ${describeError(e)}"
                 },
             )
         }
@@ -134,25 +137,8 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = try {
                 ScanState.Success(onCall())
             } catch (e: Exception) {
-                ScanState.Failure(describe(e))
+                ScanState.Failure(describeError(e))
             }
         }
-    }
-
-    private fun describe(e: Exception): String = when (e) {
-        is HttpException -> {
-            // The error body can be read only once, so keep it for both parsing and display.
-            val raw = runCatching { e.response()?.errorBody()?.string() }.getOrNull().orEmpty()
-            val detail = runCatching { Gson().fromJson(raw, ErrorBody::class.java)?.detail }.getOrNull()
-            buildString {
-                append("Der Server antwortete mit Fehler ${e.code()}.")
-                when {
-                    detail != null -> append(" ").append(detail)
-                    raw.isNotBlank() -> append(" Antwort: ").append(raw.trim().take(200))
-                }
-            }
-        }
-        is IOException -> "Server nicht erreichbar. Läuft er, und stimmt die Adresse?"
-        else -> e.message ?: "Unbekannter Fehler."
     }
 }

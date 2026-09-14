@@ -52,6 +52,13 @@ fun verdictTitle(verdict: String): String = when (verdict) {
     else -> "GRÜN – sieht unbedenklich aus"
 }
 
+/** One-word verdict for the full-screen traffic-light panel and the notification title. */
+fun verdictWord(verdict: String): String = when (verdict) {
+    "red" -> "GEFAHR"
+    "yellow" -> "VORSICHT"
+    else -> "SICHER"
+}
+
 fun levelWord(level: String): String = when (level) {
     "red" -> "gefährlich"
     "yellow" -> "verdächtig"

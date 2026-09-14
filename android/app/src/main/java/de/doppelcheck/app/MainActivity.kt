@@ -1,10 +1,14 @@
 package de.doppelcheck.app
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.systemBars
@@ -16,7 +20,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
+import com.google.gson.Gson
+import de.doppelcheck.app.api.ScanResult
 import de.doppelcheck.app.scan.SystemSettings
 import de.doppelcheck.app.ui.DoppelCheckTheme
 import de.doppelcheck.app.ui.ScreenScanSetup
@@ -67,6 +74,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         handleIntent(intent)
+        requestNotificationPermission()
     }
 
     override fun onResume() {
@@ -81,8 +89,22 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    /** Text or image shared from another app is scanned straight away. */
+    /** Android 13+: the verdict of a screen scan is also posted as a notification. */
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val permission = Manifest.permission.POST_NOTIFICATIONS
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) return
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }.launch(permission)
+    }
+
+    /** Text or image shared from another app is scanned straight away; a screen-scan result is shown. */
     private fun handleIntent(intent: Intent?) {
+        if (intent?.action == ACTION_SHOW_RESULT) {
+            intent.getStringExtra(EXTRA_RESULT_JSON)
+                ?.let { runCatching { Gson().fromJson(it, ScanResult::class.java) }.getOrNull() }
+                ?.let(viewModel::showResult)
+            return
+        }
         if (intent == null || intent.action != Intent.ACTION_SEND) return
         val type = intent.type.orEmpty()
         when {
@@ -95,5 +117,10 @@ class MainActivity : ComponentActivity() {
                 IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
                     ?.let(viewModel::scanImage)
         }
+    }
+
+    companion object {
+        const val ACTION_SHOW_RESULT = "de.doppelcheck.app.SHOW_RESULT"
+        const val EXTRA_RESULT_JSON = "result_json"
     }
 }
