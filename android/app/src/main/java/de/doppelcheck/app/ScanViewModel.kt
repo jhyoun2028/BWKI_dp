@@ -60,10 +60,16 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         refreshSetup()
     }
 
+    fun setChromeFilterEnabled(enabled: Boolean) {
+        settings.chromeFilterEnabled = enabled
+        refreshSetup()
+    }
+
     private fun readSetup() = SetupStatus(
         accessibilityOn = DoppelCheckAccessibilityService.instance != null,
         overlayAllowed = Settings.canDrawOverlays(getApplication()),
         bubbleEnabled = settings.bubbleEnabled,
+        chromeFilterEnabled = settings.chromeFilterEnabled,
         isAssistant = SystemSettings.isAssistant(getApplication()),
     )
 

@@ -22,6 +22,7 @@ data class SetupStatus(
     val overlayAllowed: Boolean = false,
     val bubbleEnabled: Boolean = true,
     val isAssistant: Boolean = false,
+    val chromeFilterEnabled: Boolean = true,
 )
 
 /** Settings section: status and shortcuts to the system screens needed for the screen scan. */
@@ -32,6 +33,7 @@ fun ScreenScanSetup(
     onOpenOverlay: () -> Unit,
     onOpenAssistant: () -> Unit,
     onBubbleEnabledChange: (Boolean) -> Unit,
+    onChromeFilterEnabledChange: (Boolean) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("Bildschirm prüfen einrichten", style = MaterialTheme.typography.headlineMedium)
@@ -78,6 +80,23 @@ fun ScreenScanSetup(
             )
             Switch(checked = status.bubbleEnabled, onCheckedChange = onBubbleEnabledChange)
         }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+        ) {
+            Text(
+                "Knöpfe, Uhrzeiten und Kopfzeile nicht mitprüfen",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(checked = status.chromeFilterEnabled, onCheckedChange = onChromeFilterEnabledChange)
+        }
+        Text(
+            "Empfohlen: an. Zum Vergleichen ausschalten – dann wird der ganze Bildschirmtext gesendet.",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 

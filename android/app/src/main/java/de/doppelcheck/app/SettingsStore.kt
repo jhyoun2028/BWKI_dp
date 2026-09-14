@@ -19,6 +19,11 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_BUBBLE, true)
         set(value) = prefs.edit { putBoolean(KEY_BUBBLE, value) }
 
+    /** Whether screen scans drop UI chrome before sending ([de.doppelcheck.app.scan.ChromeFilter]); A/B switch. */
+    var chromeFilterEnabled: Boolean
+        get() = prefs.getBoolean(KEY_CHROME_FILTER, true)
+        set(value) = prefs.edit { putBoolean(KEY_CHROME_FILTER, value) }
+
     /** Full URL of an endpoint, e.g. endpoint("/scan") -> "https://abc.ngrok-free.app/scan". */
     fun endpoint(path: String): String = baseUrl.trimEnd('/') + path
 
@@ -26,6 +31,7 @@ class SettingsStore(context: Context) {
         private const val PREFS = "doppelcheck"
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_BUBBLE = "bubble_enabled"
+        private const val KEY_CHROME_FILTER = "chrome_filter_enabled"
 
         /** Trim, drop a trailing slash and add https:// when the user typed only a host. */
         fun normalize(raw: String): String {

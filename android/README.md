@@ -98,16 +98,22 @@ sofort. Ist die Bedienungshilfe aus, erscheint ein Hinweis und die Bedienungshil
 
 1. Auslöser (runder Knopf, Kachel oder Assistenten-Geste) → der Dienst liest den Text der Vordergrund-App.
    Die eigenen Fenster von DoppelCheck werden dabei übersprungen.
-2. **Ist das überhaupt eine Nachricht?** (`scan/MessageGate.kt`) Nur wenn mindestens ein
+2. **Bedienelemente herausfiltern** (`scan/ChromeFilter.kt`, abschaltbar in den Einstellungen):
+   weg fallen Button/ImageButton/ImageView/EditText, antippbare Elemente mit Beschreibungstext
+   (Bedienhinweise), IDs mit Endung `_btn`, `_button`, `toolbar`, `_icon`, `photo`, `divider`,
+   `date`, `entry`, `overflow` sowie eine Liste bekannter WhatsApp-Kopf-/Eingabe-IDs. Die Regeln
+   stammen aus echten WhatsApp-Mitschnitten; die Nachricht selbst steht dort in `top_message`,
+   `bottom_message`, `message_text` bzw. `conversation_row_text`.
+3. **Ist das überhaupt eine Nachricht?** (`scan/MessageGate.kt`) Nur wenn mindestens ein
    Textblock ≥ 25 Zeichen aus einem nicht antippbaren Element kommt, das kein
    Button/ImageButton/ImageView/EditText ist – oder ein Link oder eine Telefonnummer
    vorkommt. Sonst (z. B. Startbildschirm) **keine Anfrage an den Server** und statt einer
    Ampel die graue Anzeige „Keine Nachricht erkannt. Öffnen Sie eine Nachricht und tippen
    Sie erneut.“ Keine Serveradresse → verständliche Meldung.
-3. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
+4. Sonst `POST /scan-text` über den vorhandenen `ApiClient`. Währenddessen deckt eine
    Vollbild-Anzeige „Prüfe …“ den Bildschirm ab (schließbar – das Ergebnis kommt dann nur
    als Benachrichtigung).
-4. Ergebnis **zweifach**:
+5. Ergebnis **zweifach**:
    - **Vollbild-Ampel** über der aktuellen App: Hintergrund in Ampelfarbe, darauf groß
      **SICHER** (grün), **VORSICHT** (gelb) oder **GEFAHR** (rot) und darunter `reason_de`
      in 30 sp. Nichts auf dieser Anzeige ist kleiner als 24 sp. „Schließen“ oder die
@@ -214,6 +220,7 @@ android/
     tile/ScanTileService.kt  Kachel in den Schnelleinstellungen: löst die Bildschirmprüfung aus
     scan/DoppelCheckAccessibilityService.kt  Bedienungshilfe, liest Text nur auf Auslöser
     scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
+    scan/ChromeFilter.kt   entfernt Knöpfe, Uhrzeiten, Kopfzeile, Eingabefeld vor dem Senden
     scan/MessageGate.kt    „Ist das eine Nachricht?“ – Sperre vor jeder Anfrage
     scan/ScanDebugLog.kt   nur Debug-Build: jeder gelesene Knoten nach Logcat (Tag DoppelCheckScan)
     scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)

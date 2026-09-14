@@ -100,13 +100,22 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
             resultOverlay.show(ScanState.Loading)
             return
         }
-        val root = targetRoot()
-        val entries = root?.let(ScreenTextCollector::collectEntries).orEmpty()
-        val text = ScreenTextCollector.joinText(entries)
-        val gate = MessageGate.check(entries)
-        ScanDebugLog.dump(root?.packageName, entries, text, notes = listOf("gate passed=${gate.passed} rule=${gate.rule}"))
-
         val settings = SettingsStore(this)
+        val root = targetRoot()
+        val collected = root?.let(ScreenTextCollector::collectEntries).orEmpty()
+        val dropReasons = collected.map(ChromeFilter::dropReason)
+        val kept = if (settings.chromeFilterEnabled) {
+            collected.filterIndexed { i, _ -> dropReasons[i] == null }
+        } else {
+            collected
+        }
+        val text = ScreenTextCollector.joinText(kept)
+        val gate = MessageGate.check(kept)
+        ScanDebugLog.dump(
+            root?.packageName, collected, dropReasons, settings.chromeFilterEnabled, text,
+            notes = listOf("gate passed=${gate.passed} rule=${gate.rule}"),
+        )
+
         when {
             // Home screen, launcher, settings …: no API call, and never a traffic light.
             !gate.passed -> resultOverlay.show(ScanState.NotChecked(NO_MESSAGE))

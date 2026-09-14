@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
                                     onOpenOverlay = { SystemSettings.openOverlayPermission(this) },
                                     onOpenAssistant = { SystemSettings.openAssistant(this) },
                                     onBubbleEnabledChange = viewModel::setBubbleEnabled,
+                                    onChromeFilterEnabledChange = viewModel::setChromeFilterEnabled,
                                 )
                             },
                         )
