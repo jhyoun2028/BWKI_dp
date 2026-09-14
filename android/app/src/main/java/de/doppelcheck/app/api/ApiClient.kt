@@ -24,8 +24,9 @@ object ApiClient {
     const val LOG_TAG = "DoppelCheck"
 
     private val http: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)     // OCR on CPU can take a while on first use
+        // A DistilBERT server loads its model on the first request (30+ s).
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)     // kept above 60 s: first OCR call on CPU can take longer
         .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()

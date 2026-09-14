@@ -91,15 +91,25 @@ fun ScanScreen(
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth().height(72.dp),
         ) {
-            Text("Prüfen", style = MaterialTheme.typography.labelLarge)
+            Text(
+                if (state is ScanState.Loading) "Prüfe …" else "Prüfen",
+                style = MaterialTheme.typography.labelLarge,
+            )
         }
 
         Spacer(Modifier.height(20.dp))
         when (state) {
             is ScanState.Idle -> Unit
-            is ScanState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator()
-                Text("Wird geprüft …", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 16.dp))
+            is ScanState.Loading -> Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator()
+                    Text("Prüfe …", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 16.dp))
+                }
+                Text(
+                    "Das erste Prüfen kann bis zu einer Minute dauern. Bitte warten.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
             }
             is ScanState.Failure -> MessageBox(VerdictYellow, "Das hat nicht geklappt", state.message)
             is ScanState.Success -> ResultBox(state.result)
