@@ -16,12 +16,13 @@ FAMILY_TEXT = SAMPLES_TEXT["family_ok.png"][2]
 
 
 def _check_shape(result: dict) -> None:
-    assert set(result) == {"verdict", "score", "reason_de", "urls", "model"}
+    assert set(result) == {"verdict", "score", "reason_de", "urls", "mixed_script", "model"}
     assert result["verdict"] in ("red", "yellow", "green")
     assert 0.0 <= result["score"] <= 1.0
     assert 0 < len(result["reason_de"]) <= 120
     assert "%" not in result["reason_de"]
     assert result["model"] in ("baseline_tfidf_logreg", "distilbert_multilingual")
+    assert isinstance(result["mixed_script"], list)
 
 
 def test_red_dhl_phishing_with_fake_link():

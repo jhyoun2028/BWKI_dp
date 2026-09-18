@@ -1,6 +1,6 @@
 """End-to-end verdict: text -> classifier probability + URL check + urgency -> traffic light.
 
-    analyze(text) -> {"verdict", "score", "reason_de", "urls", "model"}
+    analyze(text) -> {"verdict", "score", "reason_de", "urls", "mixed_script", "model"}
 
 Model fallback: models/distilbert/ if present locally, else models/baseline.joblib.
 """
@@ -13,6 +13,7 @@ from pathlib import Path
 import joblib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from script_check import MIXED_SCRIPT_REASON, find_mixed_script_words  # noqa: E402
 from url_check import check_url, extract_urls, mask_urls  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,8 +104,12 @@ def _fit(sentence: str) -> str:
 
 
 def build_reason(verdict: str, p: float, url_results: list[dict], urgency: list[str],
-                 capped: bool = False) -> str:
+                 capped: bool = False, mixed: list | None = None) -> str:
     """One plain-German sentence (<= 120 chars), no jargon, no percentages."""
+    # Hidden foreign characters are concrete and easy to explain, so they win the
+    # sentence whenever the verdict is not already red for a stronger reason.
+    if mixed and verdict != "red":
+        return MIXED_SCRIPT_REASON
     if capped:
         return "Achtung – der Link führt zu einer bekannten Seite, der Text wirkt aber ungewöhnlich. Im Zweifel nachfragen."
     url_level = worst_level([r["level"] for r in url_results])
@@ -135,25 +140,28 @@ def analyze(text: str) -> dict:
     url_results = [{"url": u, **check_url(u)} for u in urls]
     url_level = worst_level([r["level"] for r in url_results])
     urgency = find_urgency(text)
+    mixed = find_mixed_script_words(text)          # homoglyph evasion, see script_check.py
     p = clf.phishing_probability(text) if text else 0.0
 
     if p >= RED_P or url_level == "red":
         verdict = "red"
-    elif p >= YELLOW_P or url_level == "yellow" or urgency:
+    elif p >= YELLOW_P or url_level == "yellow" or urgency or mixed:
         verdict = "yellow"
     else:
         verdict = "green"
 
     trusted_only = bool(url_results) and all(r["trusted"] for r in url_results)
-    capped = TRUSTED_LINK_CAP and verdict == "red" and trusted_only and not urgency and p < TRUSTED_RED_P
+    capped = (TRUSTED_LINK_CAP and verdict == "red" and trusted_only
+              and not urgency and not mixed and p < TRUSTED_RED_P)
     if capped:
         verdict = "yellow"
 
     return {
         "verdict": verdict,
         "score": round(p, 4),
-        "reason_de": build_reason(verdict, p, url_results, urgency, capped),
+        "reason_de": build_reason(verdict, p, url_results, urgency, capped, mixed),
         "urls": url_results,
+        "mixed_script": [m.word for m in mixed],
         "model": clf.name,
     }
 

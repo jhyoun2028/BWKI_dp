@@ -19,9 +19,12 @@ import pipeline  # noqa: E402
 # Traffic-light colours. White text sits on all three, so the reason sentence is bold –
 # on the amber tone only large/bold text reaches a comfortable contrast ratio.
 COLORS = {"red": "#b3261e", "yellow": "#bf8700", "green": "#1a7f37"}
-WORDS = {"red": "GEFAHR", "yellow": "VORSICHT", "green": "SICHER"}
+WORDS = {"red": "GEFAHR", "yellow": "UNKLAR", "green": "SICHER"}
 LEVEL_DE = {"red": "gefährlich", "yellow": "verdächtig", "green": "unbedenklich"}
 NEUTRAL = "#44484d"
+# Extra guidance shown under the reason sentence whenever the verdict is yellow.
+YELLOW_ADVICE = ("Wir sind nicht sicher. Öffnen Sie keine Links und fragen Sie im Zweifel bei der "
+                 "Firma nach – über eine Nummer, die Sie selbst kennen.")
 
 CSS = """
 #kopf h1 { font-size: 40px; margin: 0 0 4px 0; }
@@ -29,6 +32,10 @@ CSS = """
 .panel { border-radius: 18px; padding: 28px 26px; margin: 4px 0 8px 0; }
 .panel .wort { font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: 1px; margin: 0; }
 .panel .satz { font-size: 22px; font-weight: 600; color: #ffffff; margin: 12px 0 0 0; line-height: 1.45; }
+.panel .rat { font-size: 20px; font-weight: 600; color: #ffffff; margin: 14px 0 0 0; line-height: 1.45; }
+.schrift h2 { font-size: 24px; margin: 18px 0 8px 0; }
+.schrift p { font-size: 20px; margin: 0; }
+.schrift code { font-size: 20px; background: #f1f3f5; padding: 2px 6px; border-radius: 4px; }
 .links h2 { font-size: 24px; margin: 18px 0 8px 0; }
 .links table { border-collapse: collapse; width: 100%; font-size: 20px; }
 .links th, .links td { border: 1px solid #c9ccd1; padding: 10px 12px; text-align: left; vertical-align: top; }
@@ -44,10 +51,11 @@ footer { display: none !important; }
 """
 
 
-def panel(color: str, word: str, sentence: str) -> str:
+def panel(color: str, word: str, sentence: str, advice: str = "") -> str:
+    extra = f'<p class="rat">{escape(advice)}</p>' if advice else ""
     return (f'<div class="panel" style="background:{color}">'
             f'<p class="wort">{escape(word)}</p>'
-            f'<p class="satz">{escape(sentence)}</p></div>')
+            f'<p class="satz">{escape(sentence)}</p>{extra}</div>')
 
 
 def url_table(urls: list[dict]) -> str:
@@ -72,9 +80,23 @@ def url_table(urls: list[dict]) -> str:
     )
 
 
+def script_note(words: list[str]) -> str:
+    """Name the words that contain hidden foreign characters."""
+    if not words:
+        return ""
+    liste = ", ".join(escape(w) for w in words[:6])
+    mehr = " …" if len(words) > 6 else ""
+    return ('<div class="schrift"><h2>Versteckte Schriftzeichen</h2>'
+            f"<p>Diese Wörter sehen normal aus, enthalten aber fremde Buchstaben: <code>{liste}</code>{mehr}. "
+            "Betrüger tun das, um Schutzfilter zu umgehen.</p></div>")
+
+
 def render(result: dict) -> str:
     verdict = result["verdict"]
-    return panel(COLORS[verdict], WORDS[verdict], result["reason_de"]) + url_table(result.get("urls", []))
+    advice = YELLOW_ADVICE if verdict == "yellow" else ""
+    return (panel(COLORS[verdict], WORDS[verdict], result["reason_de"], advice)
+            + script_note(result.get("mixed_script", []))
+            + url_table(result.get("urls", [])))
 
 
 def hint(sentence: str, color: str = NEUTRAL, word: str = "BEREIT") -> str:
