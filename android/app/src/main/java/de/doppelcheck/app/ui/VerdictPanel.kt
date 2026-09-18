@@ -41,7 +41,14 @@ private val ButtonStyle = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bo
  * colour with `reason_de` below. Nothing on it is smaller than 24 sp.
  */
 @Composable
-fun VerdictPanel(state: ScanState, onClose: () -> Unit, onDetails: () -> Unit) {
+fun VerdictPanel(
+    state: ScanState,
+    onClose: () -> Unit,
+    onDetails: () -> Unit,
+    onNotifyContact: () -> Unit = {},
+    speakResult: Boolean = false,
+) {
+    SpeakVerdict(state, speakResult)
     val background = when (state) {
         is ScanState.Success -> verdictColor(state.result.verdict)
         is ScanState.Failure -> FailureBackground
@@ -88,6 +95,15 @@ fun VerdictPanel(state: ScanState, onClose: () -> Unit, onDetails: () -> Unit) {
         }
 
         Spacer(Modifier.height(40.dp))
+        if (state is ScanState.Success && state.result.verdict == "red") {
+            Button(
+                onClick = onNotifyContact,
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = background),
+                modifier = Modifier.fillMaxWidth().height(80.dp),
+            ) { Text("Angehörige informieren", style = ButtonStyle) }
+            Spacer(Modifier.height(16.dp))
+        }
         Button(
             onClick = onClose,
             shape = RoundedCornerShape(20.dp),

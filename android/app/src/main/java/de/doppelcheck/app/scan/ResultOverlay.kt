@@ -16,6 +16,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import de.doppelcheck.app.ScanState
+import de.doppelcheck.app.SettingsStore
 import de.doppelcheck.app.ui.DoppelCheckTheme
 import de.doppelcheck.app.ui.VerdictPanel
 
@@ -27,10 +28,13 @@ import de.doppelcheck.app.ui.VerdictPanel
 class ResultOverlay(
     private val context: Context,
     private val onDetails: (ScanState.Success) -> Unit,
+    private val onNotifyContact: (ScanState.Success) -> Unit = {},
 ) {
 
     private val windowManager = context.getSystemService(WindowManager::class.java)
     private val state = mutableStateOf<ScanState>(ScanState.Loading)
+    // Read once per scan, not on every recomposition: the user cannot change it while it shows.
+    private val speakResult = mutableStateOf(false)
     private var root: FrameLayout? = null
     private var owner: OverlayLifecycleOwner? = null
 
@@ -40,6 +44,7 @@ class ResultOverlay(
     fun show(newState: ScanState) {
         state.value = newState
         if (root != null) return
+        speakResult.value = SettingsStore(context).speakResult
 
         val lifecycleOwner = OverlayLifecycleOwner().also { it.start() }
         val composeView = ComposeView(context).apply {
@@ -51,6 +56,9 @@ class ResultOverlay(
                         state = state.value,
                         onClose = ::hide,
                         onDetails = { (state.value as? ScanState.Success)?.let { hide(); onDetails(it) } },
+                        // Hide first: the SMS app must come up in front, not behind the overlay.
+                        onNotifyContact = { (state.value as? ScanState.Success)?.let { hide(); onNotifyContact(it) } },
+                        speakResult = speakResult.value,
                     )
                 }
             }

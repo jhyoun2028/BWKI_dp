@@ -7,6 +7,22 @@
     <!-- Ergebnis der Bildschirmprüfung als Benachrichtigung (ab Android 13 nachgefragt) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!--
+        „Angehörige informieren“ öffnet die SMS-App mit vorbereitetem Text (ACTION_SENDTO).
+        Ab Android 11 muss die App angeben, welche fremden Apps sie sehen darf, sonst findet
+        resolveActivity() keine SMS-App. KEINE SMS-Berechtigung: gesendet wird nur per Hand.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="sms" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"

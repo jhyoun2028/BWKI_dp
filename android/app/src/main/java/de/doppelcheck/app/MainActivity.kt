@@ -1,11 +1,13 @@
 package de.doppelcheck.app
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,14 +18,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import com.google.gson.Gson
 import de.doppelcheck.app.api.ScanResult
+import de.doppelcheck.app.contact.TrustedContact
 import de.doppelcheck.app.scan.SystemSettings
 import de.doppelcheck.app.ui.DoppelCheckTheme
 import de.doppelcheck.app.ui.ScreenScanSetup
@@ -39,18 +39,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             DoppelCheckTheme {
                 Surface(modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)) {
-                    var showSettings by remember { mutableStateOf(false) }
+                    val showSettings by viewModel.showSettings.collectAsState()
                     val input by viewModel.input.collectAsState()
                     val state by viewModel.state.collectAsState()
                     val baseUrl by viewModel.baseUrl.collectAsState()
                     val setup by viewModel.setup.collectAsState()
+                    val contact by viewModel.contact.collectAsState()
+                    val speakResult by viewModel.speakResult.collectAsState()
 
                     if (showSettings) {
                         SettingsScreen(
                             baseUrl = baseUrl,
+                            contactName = contact.name,
+                            contactPhone = contact.phone,
+                            speakResult = speakResult,
                             onSave = viewModel::saveBaseUrl,
+                            onSaveContact = viewModel::saveContact,
+                            onSpeakResultChange = viewModel::setSpeakResult,
                             onCheck = viewModel::checkConnection,
-                            onBack = { showSettings = false },
+                            onBack = viewModel::closeSettings,
                             screenScanSetup = {
                                 ScreenScanSetup(
                                     status = setup,
@@ -69,7 +76,9 @@ class MainActivity : ComponentActivity() {
                             serverConfigured = baseUrl.isNotBlank(),
                             onInputChange = viewModel::onInputChange,
                             onScan = { viewModel.scanText(input) },
-                            onOpenSettings = { showSettings = true },
+                            onOpenSettings = viewModel::openSettings,
+                            onNotifyContact = { result -> notifyContact(result) },
+                            speakResult = speakResult,
                         )
                     }
                 }
@@ -99,8 +108,24 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }.launch(permission)
     }
 
+    /**
+     * Opens the SMS app with a pre-filled warning for the trusted contact. Without a stored
+     * contact [TrustedContact.intent] returns the settings instead, so the button always does
+     * something. Nothing is sent until the user presses send in the SMS app.
+     */
+    private fun notifyContact(result: ScanResult) {
+        val intent = TrustedContact.intent(this, result.reasonDe)
+        runCatching { startActivity(intent) }.onFailure {
+            Toast.makeText(this, "Keine SMS-App gefunden.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     /** Text or image shared from another app is scanned straight away; a screen-scan result is shown. */
     private fun handleIntent(intent: Intent?) {
+        if (intent?.action == ACTION_OPEN_SETTINGS) {
+            viewModel.openSettings()
+            return
+        }
         if (intent?.action == ACTION_SHOW_RESULT) {
             intent.getStringExtra(EXTRA_RESULT_JSON)
                 ?.let { runCatching { Gson().fromJson(it, ScanResult::class.java) }.getOrNull() }
@@ -123,6 +148,13 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_SHOW_RESULT = "de.doppelcheck.app.SHOW_RESULT"
+        const val ACTION_OPEN_SETTINGS = "de.doppelcheck.app.OPEN_SETTINGS"
         const val EXTRA_RESULT_JSON = "result_json"
+
+        /** Opens the app directly on the settings screen (used when no contact is stored yet). */
+        fun settingsIntent(context: Context): Intent =
+            Intent(context, MainActivity::class.java)
+                .setAction(ACTION_OPEN_SETTINGS)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 }

@@ -9,8 +9,10 @@ import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import android.widget.Toast
 import de.doppelcheck.app.ScanState
 import de.doppelcheck.app.SettingsStore
+import de.doppelcheck.app.contact.TrustedContact
 import de.doppelcheck.app.api.ApiClient
 import de.doppelcheck.app.api.TextRequest
 import de.doppelcheck.app.api.describeError
@@ -37,7 +39,9 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var scanJob: Job? = null
     private var bubble: BubbleOverlay? = null
-    private val resultOverlay by lazy { ResultOverlay(this, onDetails = ::openDetails) }
+    private val resultOverlay by lazy {
+        ResultOverlay(this, onDetails = ::openDetails, onNotifyContact = ::notifyContact)
+    }
     private val notifier by lazy { VerdictNotifier(this) }
 
     override fun onServiceConnected() {
@@ -155,6 +159,18 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
 
     private fun openDetails(success: ScanState.Success) {
         startActivity(VerdictNotifier.resultIntent(this, success.result))
+    }
+
+    /**
+     * Red verdict: hand a pre-filled warning SMS to the user's SMS app (or open the settings
+     * if no contact is stored). Started from a service, so the intent needs its own task.
+     */
+    private fun notifyContact(success: ScanState.Success) {
+        val intent = TrustedContact.intent(this, success.result.reasonDe)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(intent) }.onFailure {
+            Toast.makeText(this, "Keine SMS-App gefunden.", Toast.LENGTH_LONG).show()
+        }
     }
 
     /**

@@ -42,7 +42,10 @@ fun ScanScreen(
     onInputChange: (String) -> Unit,
     onScan: () -> Unit,
     onOpenSettings: () -> Unit,
+    onNotifyContact: (ScanResult) -> Unit = {},
+    speakResult: Boolean = false,
 ) {
+    SpeakVerdict(state, speakResult)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -113,7 +116,7 @@ fun ScanScreen(
             }
             is ScanState.Failure -> MessageBox(VerdictYellow, "Das hat nicht geklappt", state.message)
             is ScanState.NotChecked -> MessageBox(VerdictNeutral, "Nicht geprüft", state.message)
-            is ScanState.Success -> ResultBox(state.result)
+            is ScanState.Success -> ResultBox(state.result, onNotifyContact)
         }
     }
 }
@@ -133,9 +136,17 @@ private fun MessageBox(background: Color, title: String, body: String) {
 }
 
 @Composable
-private fun ResultBox(result: ScanResult) {
+private fun ResultBox(result: ScanResult, onNotifyContact: (ScanResult) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         MessageBox(verdictColor(result.verdict), verdictTitle(result.verdict), result.reasonDe)
+
+        if (result.verdict == "red") {
+            Button(
+                onClick = { onNotifyContact(result) },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().height(72.dp),
+            ) { Text("Angehörige informieren", style = MaterialTheme.typography.labelLarge) }
+        }
 
         if (result.urls.isNotEmpty()) {
             Text("Gefundene Links", style = MaterialTheme.typography.titleLarge)

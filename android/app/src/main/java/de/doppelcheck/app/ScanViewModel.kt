@@ -33,6 +33,9 @@ sealed interface ScanState {
     data class NotChecked(val message: String) : ScanState
 }
 
+/** The stored trusted contact as the settings screen shows it. */
+data class TrustedContactInfo(val name: String = "", val phone: String = "")
+
 class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     private val settings = SettingsStore(app)
@@ -48,6 +51,37 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _setup = MutableStateFlow(readSetup())
     val setup: StateFlow<SetupStatus> = _setup.asStateFlow()
+
+    /** Settings are a screen, not a separate activity, so the state lives here (survives rotation). */
+    private val _showSettings = MutableStateFlow(false)
+    val showSettings: StateFlow<Boolean> = _showSettings.asStateFlow()
+
+    private val _contact = MutableStateFlow(TrustedContactInfo(settings.contactName, settings.contactPhone))
+    val contact: StateFlow<TrustedContactInfo> = _contact.asStateFlow()
+
+    private val _speakResult = MutableStateFlow(settings.speakResult)
+    val speakResult: StateFlow<Boolean> = _speakResult.asStateFlow()
+
+    fun openSettings() {
+        _showSettings.value = true
+    }
+
+    fun closeSettings() {
+        _showSettings.value = false
+    }
+
+    /** Relative/friend who can be warned about a red verdict; an empty number switches it off. */
+    fun saveContact(name: String, phone: String) {
+        settings.contactName = name
+        settings.contactPhone = phone
+        _contact.value = TrustedContactInfo(settings.contactName, settings.contactPhone)
+    }
+
+    /** "Ergebnis vorlesen": read the verdict out loud when a result appears. */
+    fun setSpeakResult(enabled: Boolean) {
+        settings.speakResult = enabled
+        _speakResult.value = enabled
+    }
 
     /** Called on every resume: the user may just be coming back from a system settings screen. */
     fun refreshSetup() {
