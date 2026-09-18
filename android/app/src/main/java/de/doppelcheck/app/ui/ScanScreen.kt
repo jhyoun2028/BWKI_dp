@@ -122,7 +122,7 @@ fun ScanScreen(
 }
 
 @Composable
-private fun MessageBox(background: Color, title: String, body: String) {
+private fun MessageBox(background: Color, title: String, body: String, advice: String? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -132,13 +132,27 @@ private fun MessageBox(background: Color, title: String, body: String) {
     ) {
         Text(title, style = MaterialTheme.typography.headlineMedium, color = OnVerdict)
         Text(body, style = MaterialTheme.typography.bodyLarge, color = OnVerdict, modifier = Modifier.padding(top = 8.dp))
+        advice?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = OnVerdict,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
     }
 }
 
 @Composable
 private fun ResultBox(result: ScanResult, onNotifyContact: (ScanResult) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        MessageBox(verdictColor(result.verdict), verdictTitle(result.verdict), result.reasonDe)
+        MessageBox(
+            verdictColor(result.verdict),
+            verdictTitle(result.verdict),
+            result.reasonDe,
+            verdictAdvice(result.verdict),
+        )
 
         if (result.verdict == "red") {
             Button(

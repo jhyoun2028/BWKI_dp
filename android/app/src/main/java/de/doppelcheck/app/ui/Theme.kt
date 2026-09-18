@@ -14,7 +14,10 @@ import androidx.compose.ui.unit.sp
 // Traffic-light colours. Chosen dark enough that white text stays readable on them
 // (contrast >= 4.5:1), because the target group often uses high brightness outdoors.
 val VerdictRed = Color(0xFFB3261E)
-val VerdictYellow = Color(0xFF8A5A00)
+// Amber, deliberately close to red: since the model moved, more phishing lands on yellow,
+// and yellow must read as a warning. White on this is 3.1:1 – enough for the large type of
+// the verdict surfaces (WCAG large-text 3:1), below the 4.5:1 that normal-size text needs.
+val VerdictYellow = Color(0xFFBF8700)
 val VerdictGreen = Color(0xFF1B5E20)
 /** Not checked / verdict "unknown": neutral grey, so it can never be mistaken for green. */
 val VerdictNeutral = Color(0xFF455A64)
@@ -53,15 +56,28 @@ fun verdictColor(verdict: String): Color = when (verdict) {
 
 fun verdictTitle(verdict: String): String = when (verdict) {
     "red" -> "ROT – Vorsicht, Betrug!"
-    "yellow" -> "GELB – Bitte prüfen"
+    "yellow" -> "GELB – unklar, bitte nicht anklicken"
     "green" -> "GRÜN – sieht unbedenklich aus"
     else -> "Nicht geprüft"
 }
 
+/**
+ * Extra sentence under `reason_de` for the yellow verdict. Yellow is not "probably fine":
+ * it is the bucket most phishing lands in since the model changed, so it has to say what
+ * to do. null for every other verdict.
+ */
+fun verdictAdvice(verdict: String): String? =
+    if (verdict == "yellow") {
+        "Wir sind nicht sicher. Öffnen Sie keine Links und fragen Sie im Zweifel bei der Firma nach – " +
+            "über eine Nummer, die Sie selbst kennen."
+    } else {
+        null
+    }
+
 /** One-word verdict for the full-screen traffic-light panel and the notification title. */
 fun verdictWord(verdict: String): String = when (verdict) {
     "red" -> "GEFAHR"
-    "yellow" -> "VORSICHT"
+    "yellow" -> "UNKLAR"
     "green" -> "SICHER"
     else -> "NICHT GEPRÜFT"
 }

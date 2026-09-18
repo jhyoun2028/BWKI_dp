@@ -33,11 +33,12 @@ private val FailureBackground = Color(0xFF37474F)
 
 private val WordStyle = TextStyle(fontSize = 64.sp, lineHeight = 72.sp, fontWeight = FontWeight.Black)
 private val ReasonStyle = TextStyle(fontSize = 30.sp, lineHeight = 40.sp, fontWeight = FontWeight.SemiBold)
+private val AdviceStyle = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
 private val HintStyle = TextStyle(fontSize = 24.sp, lineHeight = 32.sp)
 private val ButtonStyle = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
 /**
- * Full-screen traffic-light panel for a screen scan: SICHER / VORSICHT / GEFAHR on the verdict
+ * Full-screen traffic-light panel for a screen scan: SICHER / UNKLAR / GEFAHR on the verdict
  * colour with `reason_de` below. Nothing on it is smaller than 24 sp.
  */
 @Composable
@@ -69,6 +70,10 @@ fun VerdictPanel(
                 Text(verdictWord(state.result.verdict), style = WordStyle, color = OnVerdict, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(24.dp))
                 Text(state.result.reasonDe, style = ReasonStyle, color = OnVerdict, textAlign = TextAlign.Center)
+                verdictAdvice(state.result.verdict)?.let { advice ->
+                    Spacer(Modifier.height(20.dp))
+                    Text(advice, style = AdviceStyle, color = OnVerdict, textAlign = TextAlign.Center)
+                }
             }
             is ScanState.Failure -> {
                 Text("Prüfung nicht möglich", style = WordStyle.copy(fontSize = 40.sp, lineHeight = 48.sp), color = OnVerdict, textAlign = TextAlign.Center)
