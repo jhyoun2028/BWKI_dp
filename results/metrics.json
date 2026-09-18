@@ -1,11 +1,11 @@
 {
   "baseline_tfidf_logreg": {
-    "date": "2026-09-09",
+    "date": "2026-09-18",
     "seed": 42,
     "params": {
       "features": "tfidf word(1,2) + tfidf char_wb(3,5)",
       "clf": "LogisticRegression",
-      "C": 3,
+      "C": 1,
       "class_weight": "balanced",
       "max_iter": 1000,
       "C_grid": [
@@ -14,128 +14,128 @@
         3
       ],
       "url_token": true,
-      "data": "train=4408 val=513 test=617 de_train=304 de_test=104"
+      "data": "train=4875 val=513 test=617 de_train=771 de_test=104"
     },
-    "val_f1_best": 0.9449,
+    "val_f1_best": 0.9375,
     "train": {
-      "n": 4408,
-      "accuracy": 0.9986,
-      "precision": 0.991,
+      "n": 4875,
+      "accuracy": 0.9971,
+      "precision": 0.9793,
       "recall": 1.0,
-      "f1": 0.9955,
-      "fpr": 0.0016,
-      "tn": 3741,
-      "fp": 6,
+      "f1": 0.9895,
+      "fpr": 0.0033,
+      "tn": 4200,
+      "fp": 14,
       "fn": 0,
       "tp": 661
     },
     "test": {
       "n": 617,
-      "accuracy": 0.9789,
-      "precision": 0.9474,
-      "recall": 0.9664,
-      "f1": 0.9568,
-      "fpr": 0.0171,
-      "tn": 460,
-      "fp": 8,
-      "fn": 5,
-      "tp": 144
+      "accuracy": 0.9773,
+      "precision": 0.9592,
+      "recall": 0.9463,
+      "f1": 0.9527,
+      "fpr": 0.0128,
+      "tn": 462,
+      "fp": 6,
+      "fn": 8,
+      "tp": 141
     },
     "test_de": {
       "n": 104,
       "accuracy": 0.9231,
-      "precision": 0.9239,
-      "recall": 0.9884,
-      "f1": 0.9551,
-      "fpr": 0.3889,
-      "tn": 11,
-      "fp": 7,
-      "fn": 1,
-      "tp": 85
+      "precision": 0.9432,
+      "recall": 0.9651,
+      "f1": 0.954,
+      "fpr": 0.2778,
+      "tn": 13,
+      "fp": 5,
+      "fn": 3,
+      "tp": 83
     },
     "top_features": {
       "spam (label 1)": [
         [
           "word__call",
-          3.14
+          2.57
         ],
         [
           "word__sie",
-          3.044
+          2.179
         ],
         [
           "word__txt",
-          2.851
-        ],
-        [
-          "word__url",
-          2.732
+          2.142
         ],
         [
           "word__to",
-          2.521
+          2.052
         ],
         [
           "word__free",
-          2.385
+          1.95
+        ],
+        [
+          "word__url",
+          1.722
         ],
         [
           "word__text",
-          2.27
+          1.695
         ],
         [
           "char__ 08",
-          2.188
-        ],
-        [
-          "char__087",
-          2.04
+          1.623
         ],
         [
           "char__xt ",
-          2.04
+          1.563
+        ],
+        [
+          "char__087",
+          1.519
         ]
       ],
       "ham (label 0)": [
         [
           "char__ i ",
-          -3.074
-        ],
-        [
-          "word__me",
-          -2.142
+          -2.316
         ],
         [
           "char__.. ",
-          -1.992
+          -1.61
         ],
         [
-          "word__my",
-          -1.848
+          "word__me",
+          -1.582
         ],
         [
           "char__...",
-          -1.752
+          -1.482
         ],
         [
-          "char__... ",
-          -1.496
+          "word__my",
+          -1.46
         ],
         [
           "word__uhr",
-          -1.397
+          -1.433
+        ],
+        [
+          "char__... ",
+          -1.281
         ],
         [
           "word__am",
-          -1.314
+          -1.195
         ],
         [
           "char__me ",
-          -1.25
+          -0.975
         ],
         [
-          "char__ me ",
-          -1.159
+          "word__00",
+          -0.973
         ]
       ]
     }

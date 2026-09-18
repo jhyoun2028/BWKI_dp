@@ -7,16 +7,18 @@ Keeps the numbers in the README in sync with the executed runs; prose lives here
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
+import joblib
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import eval_pipeline  # noqa: E402
 import pipeline  # noqa: E402
 from data_prep import LINK_PLACEHOLDER  # noqa: E402
-from train_baseline import EXPERIMENTS_PATH, METRICS_PATH, PROCESSED, log  # noqa: E402
+from train_baseline import EXPERIMENTS_PATH, METRICS_PATH, PROCESSED, RESULTS, log  # noqa: E402
 from url_check import URL_MASK  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +61,24 @@ def traffic_light() -> dict:
             "false_alarm": float((legit.verdict != "green").mean()),
             "legit_red": float((legit.verdict == "red").mean()),
             "phish_red": float((phish.verdict == "red").mean())}
+
+
+def error_analysis_examples() -> int | None:
+    """How many misclassified rows results/error_analysis.md currently documents."""
+    f = RESULTS / "error_analysis.md"
+    if not f.exists():
+        return None
+    hit = re.search(r"## Die (\d+) falsch eingeordneten Zeilen", f.read_text(encoding="utf-8"))
+    return int(hit.group(1)) if hit else None
+
+
+def word_weights(words: list[str]) -> dict[str, float]:
+    """Coefficients of the active baseline, so claims about them cannot go stale."""
+    pipe = joblib.load(ROOT / "models" / "baseline.joblib")
+    names = pipe.named_steps["features"].get_feature_names_out()
+    coef = pipe.named_steps["clf"].coef_[0]
+    idx = {n: i for i, n in enumerate(names)}
+    return {w: float(coef[idx[f"word__{w}"]]) for w in words if f"word__{w}" in idx}
 
 
 def main() -> None:
@@ -180,12 +200,16 @@ def main() -> None:
     L.append(f"\n{de_num(tl['phish_red'] * 100, 1)} % der Phishing-Nachrichten erhalten Rot, "
              f"{de_num(tl['legit_red'] * 100, 1)} % der harmlosen "
              f"fälschlich. Reproduzierbar mit `python src/eval_pipeline.py`.\n")
-    L.append("**Ehrliche Einordnung.** Der deutsche Testteil ist mit 18 harmlosen Nachrichten klein, jede einzelne "
-             "verschiebt die Falsch-Alarm-Rate um mehr als fünf Punkte. Die Baseline hat außerdem gelernt, dass "
-             "förmliches Deutsch verdächtig ist („Sie“ wiegt fast so schwer wie das englische Spam-Wort „call“) – "
-             "weil unsere echten Phishing-Texte förmlich sind und unsere harmlosen Texte überwiegend aus Werbe- und "
-             "Terminvorlagen stammen. Eine ausführliche Fehleranalyse mit 17 echten Beispielen steht in "
-             "[`results/error_analysis.md`](results/error_analysis.md).\n")
+    w = word_weights(["sie", "ihre", "call"])
+    n_ex = error_analysis_examples()
+    L.append(f"**Ehrliche Einordnung.** Der deutsche Testteil ist mit {tl['n_legit']} harmlosen Nachrichten klein, jede "
+             f"einzelne verschiebt die Falsch-Alarm-Rate um mehr als fünf Punkte. Die Baseline neigt außerdem dazu, "
+             f"förmliches Deutsch verdächtig zu finden: „Sie“ wiegt {w.get('sie', 0):+.2f}, „Ihre“ {w.get('ihre', 0):+.2f}, "
+             f"das englische Spam-Wort „call“ {w.get('call', 0):+.2f} – weil unsere echten Phishing-Texte förmlich sind "
+             "und wir nur wenige echte harmlose Texte haben. Synthetische formelle Nachrichten im Training dämpfen den "
+             "Effekt, ersetzen aber keine echten Daten. Eine ausführliche Fehleranalyse"
+             + (f" mit {n_ex} echten Beispielen" if n_ex else "")
+             + " steht in [`results/error_analysis.md`](results/error_analysis.md).\n")
 
     L.append("## iOS-Shortcut\n")
     L.append("Kein Programmieren nötig, nur die vorinstallierte App **Kurzbefehle**. Voraussetzung: ein laufender "

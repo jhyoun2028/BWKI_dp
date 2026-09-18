@@ -4,7 +4,7 @@ Zeilen pro Split × Label × Sprache (label 1 = Phishing/Spam), mean_len = mittl
 
 | split | label | lang | n | mean_len |
 |---|---|---|---|---|
-| train | 0 | de | 148 | 107.1 |
+| train | 0 | de | 615 | 98.5 |
 | train | 0 | en | 3599 | 71.0 |
 | train | 1 | de | 156 | 134.8 |
 | train | 1 | en | 505 | 135.5 |
@@ -19,7 +19,7 @@ Zeilen pro Split × Label × Sprache (label 1 = Phishing/Spam), mean_len = mittl
 
 | split | n | spam-Anteil | mean_len |
 |---|---|---|---|
-| train | 4408 | 0.150 | 81.8 |
+| train | 4875 | 0.136 | 83.2 |
 | val | 513 | 0.123 | 76.0 |
 | test | 617 | 0.241 | 92.8 |
 
@@ -31,6 +31,7 @@ Zeilen pro Split × Label × Sprache (label 1 = Phishing/Spam), mean_len = mittl
 | german_phishing | 86 | 0 | 86 |
 | german_synthetic_legit | 70 | 0 | 0 |
 | german_synthetic_legit_v2 | 60 | 0 | 0 |
+| german_synthetic_legit_v3_1 | 467 | 0 | 0 |
 | german_synthetic_phishing | 70 | 0 | 0 |
 | uci_sms | 4104 | 513 | 513 |
 

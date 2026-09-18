@@ -98,11 +98,11 @@ results/            metrics.json, experiments.csv, error_analysis.md, Konfusions
 
 ## Ergebnisse
 
-**Datenbasis:** 4.408 Trainings-, 513 Validierungs- und 617 Testnachrichten (davon deutsch: 304 im Training, 104 im Test, keine im Validierungsteil). Aufteilung mit `seed=42`, Duplikate vorher entfernt, der Testteil wird pro Modell genau einmal ausgewertet. Alle Zahlen stammen aus ausgeführten Läufen (`results/metrics.json`, Verlauf in `results/experiments.csv`).
+**Datenbasis:** 4.875 Trainings-, 513 Validierungs- und 617 Testnachrichten (davon deutsch: 771 im Training, 104 im Test, keine im Validierungsteil). Aufteilung mit `seed=42`, Duplikate vorher entfernt, der Testteil wird pro Modell genau einmal ausgewertet. Alle Zahlen stammen aus ausgeführten Läufen (`results/metrics.json`, Verlauf in `results/experiments.csv`).
 
 | Modell | Train-Acc | Test-Acc | Test-F1 | Test-FPR | DE-Acc | DE-F1 | DE-Recall | DE-FPR |
 |---|---|---|---|---|---|---|---|---|
-| Baseline TF-IDF + LogReg **(aktiv)** | 0.9986 | 0.9789 | 0.9568 | 0.0171 | 0.9231 | 0.9551 | 0.9884 | 0.3889 |
+| Baseline TF-IDF + LogReg **(aktiv)** | 0.9971 | 0.9773 | 0.9527 | 0.0128 | 0.9231 | 0.9540 | 0.9651 | 0.2778 |
 | DistilBERT multilingual | 0.9959 | 0.9757 | 0.9477 | 0.0043 | 0.8942 | 0.9333 | 0.8953 | 0.1111 |
 | Baseline ohne `<URL>`-Token (Ablation) | 0.9955 | 0.9773 | 0.9539 | 0.0214 | 0.9135 | 0.9503 | 1.0000 | 0.5000 |
 | Baseline, Schwelle 0.22 (getunt auf val) | 0.9816 | 0.9595 | 0.9216 | 0.0491 | 0.8654 | 0.9247 | 1.0000 | 0.7778 |
@@ -111,18 +111,18 @@ results/            metrics.json, experiments.csv, error_analysis.md, Konfusions
 
 FPR = Falsch-Alarm-Rate (fälschlich als Phishing markierte harmlose Nachrichten). „DE“ = nur die deutschen Testzeilen, die für unsere Zielgruppe entscheidend sind.
 
-**Was die Tabelle zeigt.** Die englische Gesamtgenauigkeit ist bei allen Modellen hoch – der UCI-Datensatz ist ein bekannter, einfacher Benchmark. Interessant ist der deutsche Teil: die Baseline übersieht fast kein Phishing (Recall 0.9884), schlägt aber bei 7 von 18 harmlosen Nachrichten Alarm. DistilBERT dreht das um: nur 2 Fehlalarme, dafür 9 übersehene Phishing-Nachrichten. Die Fehler beider Modelle überschneiden sich fast nicht – eine Kombination ist der nächste offene Schritt.
+**Was die Tabelle zeigt.** Die englische Gesamtgenauigkeit ist bei allen Modellen hoch – der UCI-Datensatz ist ein bekannter, einfacher Benchmark. Interessant ist der deutsche Teil: die Baseline übersieht fast kein Phishing (Recall 0.9651), schlägt aber bei 5 von 18 harmlosen Nachrichten Alarm. DistilBERT dreht das um: nur 2 Fehlalarme, dafür 9 übersehene Phishing-Nachrichten. Die Fehler beider Modelle überschneiden sich fast nicht – eine Kombination ist der nächste offene Schritt.
 
 **Ampel im Produkt** (volle Logik: Modell + Link-Regeln + Druckformulierungen, deutscher Testteil):
 
 | wahres Label | grün | gelb | rot |
 |---|---|---|---|
-| harmlos (n=18) | 10 | 6 | 2 |
-| Phishing (n=86) | 1 | 7 | 78 |
+| harmlos (n=18) | 12 | 6 | 0 |
+| Phishing (n=86) | 3 | 23 | 60 |
 
-90,7 % der Phishing-Nachrichten erhalten Rot, 11,1 % der harmlosen fälschlich. Reproduzierbar mit `python src/eval_pipeline.py`.
+69,8 % der Phishing-Nachrichten erhalten Rot, 0,0 % der harmlosen fälschlich. Reproduzierbar mit `python src/eval_pipeline.py`.
 
-**Ehrliche Einordnung.** Der deutsche Testteil ist mit 18 harmlosen Nachrichten klein, jede einzelne verschiebt die Falsch-Alarm-Rate um mehr als fünf Punkte. Die Baseline hat außerdem gelernt, dass förmliches Deutsch verdächtig ist („Sie“ wiegt fast so schwer wie das englische Spam-Wort „call“) – weil unsere echten Phishing-Texte förmlich sind und unsere harmlosen Texte überwiegend aus Werbe- und Terminvorlagen stammen. Eine ausführliche Fehleranalyse mit 17 echten Beispielen steht in [`results/error_analysis.md`](results/error_analysis.md).
+**Ehrliche Einordnung.** Der deutsche Testteil ist mit 18 harmlosen Nachrichten klein, jede einzelne verschiebt die Falsch-Alarm-Rate um mehr als fünf Punkte. Die Baseline neigt außerdem dazu, förmliches Deutsch verdächtig zu finden: „Sie“ wiegt +2.18, „Ihre“ +0.94, das englische Spam-Wort „call“ +2.57 – weil unsere echten Phishing-Texte förmlich sind und wir nur wenige echte harmlose Texte haben. Synthetische formelle Nachrichten im Training dämpfen den Effekt, ersetzen aber keine echten Daten. Eine ausführliche Fehleranalyse mit 15 echten Beispielen steht in [`results/error_analysis.md`](results/error_analysis.md).
 
 ## iOS-Shortcut
 
