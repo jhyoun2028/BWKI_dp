@@ -24,3 +24,25 @@ __pycache__/
 
 # System
 .DS_Store
+
+# IDE / Editor
+.idea/
+.vscode/
+*.iml
+
+# Python-Umgebungen und Paketreste
+.venv/
+env/
+*.egg-info/
+*.egg-info
+*.egg
+
+# System
+.DS_Store
+Thumbs.db
+
+# Android-Build (Unterprojekt auf Branch android-app)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
