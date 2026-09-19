@@ -7,7 +7,7 @@ models/*
 !models/.gitkeep
 data/blocklists/*
 !data/blocklists/.gitkeep
-*claude.md
+claude.md
 
 # Tests
 .pytest_cache/
