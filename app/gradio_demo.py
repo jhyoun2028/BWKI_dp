@@ -36,6 +36,8 @@ CSS = """
 .schrift h2 { font-size: 24px; margin: 18px 0 8px 0; }
 .schrift p { font-size: 20px; margin: 0; }
 .schrift code { font-size: 20px; background: #f1f3f5; padding: 2px 6px; border-radius: 4px; }
+.auffaellig { font-size: 20px; margin: 12px 0 0 0; line-height: 1.45; }
+.auffaellig b { font-weight: 700; }
 .links h2 { font-size: 24px; margin: 18px 0 8px 0; }
 .links table { border-collapse: collapse; width: 100%; font-size: 20px; }
 .links th, .links td { border: 1px solid #c9ccd1; padding: 10px 12px; text-align: left; vertical-align: top; }
@@ -80,6 +82,15 @@ def url_table(urls: list[dict]) -> str:
     )
 
 
+def signal_note(signals: list[str]) -> str:
+    """Words from the message that pushed the score up. Only shown when we actually warn –
+    under a green verdict a list of 'suspicious' everyday words would only confuse."""
+    if not signals:
+        return ""
+    return ('<p class="auffaellig"><b>Auffällig:</b> '
+            + ", ".join(f"„{escape(w)}“" for w in signals) + "</p>")
+
+
 def script_note(words: list[str]) -> str:
     """Name the words that contain hidden foreign characters."""
     if not words:
@@ -94,7 +105,9 @@ def script_note(words: list[str]) -> str:
 def render(result: dict) -> str:
     verdict = result["verdict"]
     advice = YELLOW_ADVICE if verdict == "yellow" else ""
+    signals = result.get("signale", []) if verdict != "green" else []
     return (panel(COLORS[verdict], WORDS[verdict], result["reason_de"], advice)
+            + signal_note(signals)
             + script_note(result.get("mixed_script", []))
             + url_table(result.get("urls", [])))
 

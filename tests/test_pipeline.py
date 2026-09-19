@@ -16,7 +16,7 @@ FAMILY_TEXT = SAMPLES_TEXT["family_ok.png"][2]
 
 
 def _check_shape(result: dict) -> None:
-    assert set(result) == {"verdict", "score", "reason_de", "urls", "mixed_script", "model"}
+    assert set(result) == {"verdict", "score", "reason_de", "urls", "mixed_script", "signale", "model"}
     assert result["verdict"] in ("red", "yellow", "green")
     assert 0.0 <= result["score"] <= 1.0
     assert 0 < len(result["reason_de"]) <= 120
@@ -164,3 +164,59 @@ def test_ocr_family_screenshot_to_green_verdict():
     text = ocr.extract_text(SAMPLES / "family_ok.png")
     assert "kaffee" in text.lower()
     assert pipeline.analyze(text)["verdict"] == "green"
+
+
+# --- explainability: the "signale" field -------------------------------------
+SPAM_EN = ("WINNER!! You have been selected to receive a £900 prize reward! "
+           "To claim call 09061701461 now.")
+PHISH_DE = ("DHL: Ihr Paket konnte nicht zugestellt werden. Bitte bestätigen Sie "
+            "Ihre Adresse: http://dhl-paket-service.top/track")
+
+
+def _baseline_active() -> bool:
+    return pipeline.get_classifier().name == "baseline_tfidf_logreg"
+
+
+def test_signale_field_is_always_present():
+    assert isinstance(pipeline.analyze("Hallo")["signale"], list)
+
+
+def test_signals_are_words_from_the_message():
+    if not _baseline_active():
+        pytest.skip("signals are only produced by the TF-IDF baseline")
+    signals = pipeline.analyze(PHISH_DE)["signale"]
+    assert signals, "a clear phishing text must yield signals"
+    low = PHISH_DE.lower()
+    for s in signals:
+        assert s.lower() in low, f"{s!r} is not part of the message"
+
+
+def test_signals_respect_the_limit_and_the_filters():
+    if not _baseline_active():
+        pytest.skip("signals are only produced by the TF-IDF baseline")
+    for text in (SPAM_EN, PHISH_DE):
+        signals = pipeline.analyze(text)["signale"]
+        assert len(signals) <= pipeline.MAX_SIGNALS
+        assert all(s.lower() != "url" for s in signals), signals      # the <URL> token is hidden
+        for s in signals:
+            assert max(len(t) for t in s.split()) >= pipeline.MIN_SIGNAL_LEN, s
+        assert len(signals) == len({s.lower() for s in signals}), "no duplicates"
+
+
+def test_signals_do_not_repeat_the_same_word():
+    if not _baseline_active():
+        pytest.skip("signals are only produced by the TF-IDF baseline")
+    signals = pipeline.analyze(PHISH_DE)["signale"]
+    words = [w.lower() for s in signals for w in s.split()]
+    assert len(words) == len(set(words)), signals
+
+
+def test_no_signals_without_text():
+    assert pipeline.analyze("")["signale"] == []
+
+
+def test_masked_link_does_not_become_a_signal():
+    if not _baseline_active():
+        pytest.skip("signals are only produced by the TF-IDF baseline")
+    signals = pipeline.analyze("Jetzt hier klicken: https://dhl-paket-service.top/track")["signale"]
+    assert all("url" != s.lower() for s in signals), signals

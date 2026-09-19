@@ -1,6 +1,6 @@
 """End-to-end verdict: text -> classifier probability + URL check + urgency -> traffic light.
 
-    analyze(text) -> {"verdict", "score", "reason_de", "urls", "mixed_script", "model"}
+    analyze(text) -> {"verdict", "score", "reason_de", "urls", "mixed_script", "signale", "model"}
 
 Model fallback: models/distilbert/ if present locally, else models/baseline.joblib.
 """
@@ -30,6 +30,9 @@ URGENCY_DE = ["sofort", "innerhalb von 24 stunden", "konto gesperrt", "konto wir
               "konnte nicht zugestellt werden", "zollgebühr", "gewinn", "letzte mahnung", "dringend"]
 URGENCY_EN = ["urgent", "verify your account", "suspended", "claim", "prize"]
 MAX_REASON_LEN = 120
+MAX_SIGNALS = 5                 # at most five phrases, otherwise the box stops being readable
+MIN_SIGNAL_LEN = 3              # skip single characters and two-letter stopwords ("zu", "es")
+URL_TERM = "url"                # what the <URL> token looks like after the vectorizer lowercases
 _LEVEL_RANK = {"green": 0, "yellow": 1, "red": 2}
 
 
@@ -40,6 +43,7 @@ class Classifier:
     """Wraps either the fine-tuned DistilBERT or the TF-IDF baseline."""
 
     def __init__(self):
+        self.pipe = None            # the sklearn pipeline, only set for the TF-IDF baseline
         self.name, self._predict = self._load()
         print(f"[pipeline] aktives Modell: {self.name}", flush=True)
 
@@ -59,11 +63,18 @@ class Classifier:
         if not BASELINE_PATH.exists():
             raise FileNotFoundError(f"{BASELINE_PATH} fehlt – bitte zuerst src/train_baseline.py ausführen")
         pipe = joblib.load(BASELINE_PATH)
+        self.pipe = pipe
         return "baseline_tfidf_logreg", lambda text: float(pipe.predict_proba([text])[0][1])
 
     def phishing_probability(self, text: str) -> float:
         # same preprocessing as data_prep.py: links become the <URL> token
         return self._predict(mask_urls(text))
+
+    def signals(self, text: str, limit: int = MAX_SIGNALS) -> list[str]:
+        """Words from `text` that pushed the score up. Empty unless the baseline is active."""
+        if self.pipe is None or not (text or "").strip():
+            return []
+        return top_word_signals(self.pipe, mask_urls(text), text, limit)
 
 
 _classifier: Classifier | None = None
@@ -74,6 +85,56 @@ def get_classifier() -> Classifier:
     if _classifier is None:
         _classifier = Classifier()
     return _classifier
+
+
+# ---------------------------------------------------------------------------
+# Explainability (TF-IDF baseline only)
+# ---------------------------------------------------------------------------
+def _readable(term: str, source: str) -> str:
+    """Show the phrase with the casing it has in the message ("paket" -> "Paket")."""
+    hit = re.search(re.escape(term), source, flags=re.IGNORECASE)
+    return hit.group(0) if hit else term
+
+
+def top_word_signals(pipe, scored_text: str, display_text: str, limit: int = MAX_SIGNALS) -> list[str]:
+    """Word n-grams present in the text whose contribution pushes the score towards phishing.
+
+    Contribution = tf-idf value of the n-gram in THIS text x its coefficient, so only terms
+    that actually occur can appear. Character n-grams are skipped: they are fragments like
+    "xt " and mean nothing to a reader.
+    """
+    union, clf = pipe.named_steps["features"], pipe.named_steps["clf"]
+    row = union.transform([scored_text]).tocoo()
+    names = union.get_feature_names_out()
+    coef = clf.coef_[0]
+
+    scored = []
+    for j, value in zip(row.col, row.data):
+        name = str(names[j])
+        if not name.startswith("word__"):
+            continue
+        contribution = value * coef[j]
+        if contribution <= 0:
+            continue
+        term = name[len("word__"):]
+        tokens = term.split()
+        if term == URL_TERM or max((len(t) for t in tokens), default=0) < MIN_SIGNAL_LEN:
+            continue
+        scored.append((contribution, term))
+
+    out: list[str] = []
+    used: set[str] = set()
+    for _, term in sorted(scored, key=lambda x: -x[0]):
+        # one word may only appear once, otherwise the list fills up with
+        # "Sie", "Sie Ihre", "bestätigen Sie" – three views of the same signal
+        tokens = set(term.split())
+        if tokens & used:
+            continue
+        used |= tokens
+        out.append(_readable(term, display_text))
+        if len(out) >= limit:
+            break
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +223,7 @@ def analyze(text: str) -> dict:
         "reason_de": build_reason(verdict, p, url_results, urgency, capped, mixed),
         "urls": url_results,
         "mixed_script": [m.word for m in mixed],
+        "signale": clf.signals(text),
         "model": clf.name,
     }
 

@@ -3,7 +3,7 @@
     uvicorn api.main:app --port 8000
 
     GET  /health            -> {"status": "ok", "model": ..., "ocr": bool}
-    POST /scan-text  JSON   {"text": "..."} -> verdict JSON (incl. "mixed_script": [...])
+    POST /scan-text  JSON   {"text": "..."} -> verdict JSON (incl. "mixed_script", "signale")
     POST /scan       multipart form field "file" (screenshot) -> verdict JSON (+ "text")
 """
 from __future__ import annotations
