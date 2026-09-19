@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 Beim ersten OCR-Aufruf lädt EasyOCR einmalig seine Modelldateien (~100 MB) nach `~/.EasyOCR/`. Alles außer dem Transformer-Training läuft auf der CPU.
 
-Das feingetunte DistilBERT-Modell (~542 MB) liegt **nicht im Repository** (Grenze für die Code-Abgabe). Download: <Google-Drive-Freigabelink hier eintragen> – danach nach `models/distilbert/` entpacken, dann nutzt die Pipeline es automatisch. Ohne diesen Ordner läuft die mitgelieferte Baseline (`models/baseline.joblib`, 3 MB).
+Das feingetunte DistilBERT-Modell (~542 MB) liegt **nicht im Repository** (Grenze für die Code-Abgabe). Download: https://drive.google.com/drive/folders/1LWeesmZDsXp9gwKXQHpo-RSwTIrIh3H_?usp=drive_link – danach nach `models/distilbert/` entpacken, dann nutzt die Pipeline es automatisch. Ohne diesen Ordner läuft die mitgelieferte Baseline (`models/baseline.joblib`, 3 MB).
 
 ## Start
 
@@ -147,6 +147,21 @@ Auf Android übernimmt die kostenlose App **HTTP Shortcuts** dieselbe Rolle: ein
 Vom Team auf einem **Samsung Galaxy** getestet: eine gefälschte DHL-SMS ergab **Rot** (p = 0.9785), die echte DHL-Zustellbenachrichtigung **Grün** (p = 0.0679). Der Weg über die API ist damit auf beiden Plattformen identisch – nur die App für die Geste unterscheidet sich.
 
 Zusätzlich liegt im Ordner `android/` eine **eigene minimale Android-App** (Kotlin, Jetpack Compose, ab Android 10). Sie enthält keine eigene Erkennungslogik, sondern schickt getippten oder geteilten Text an `/scan-text` und geteilte Screenshots an `/scan` und zeigt die Ampel an. Die Serveradresse wird in den Einstellungen der App hinterlegt. Einrichtung und Aufbau: [`android/README.md`](android/README.md).
+
+**App bauen** (JDK 17 und Android SDK Platform 34 nötig, am einfachsten über Android Studio):
+
+```bash
+# Variante A: Android Studio -> Open -> Ordner android/ auswaehlen, Gradle-Sync abwarten,
+#             Geraet anschliessen (USB-Debugging an) und auf Run druecken.
+
+# Variante B: Kommandozeile
+cd android
+echo "sdk.dir=$ANDROID_HOME" > local.properties   # Pfad zum Android SDK
+./gradlew assembleDebug                          # APK bauen
+./gradlew installDebug                           # auf ein angeschlossenes Geraet spielen
+```
+
+Die APK liegt danach unter `android/app/build/outputs/apk/debug/app-debug.apk`. Das Projekt enthält **keine Signierungsschlüssel**; Debug-Builds signiert Android Studio selbst. Nach dem ersten Start die Serveradresse in den Einstellungen der App eintragen und „Verbindung testen“ drücken.
 
 ## Quellen
 

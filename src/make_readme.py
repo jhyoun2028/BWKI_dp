@@ -24,7 +24,7 @@ from url_check import URL_MASK  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "README.md"
 REPO = "jhyoun2028/BWKI_dp"
-DRIVE_LINK = "<Google-Drive-Freigabelink hier eintragen>"
+DRIVE_LINK = "https://drive.google.com/drive/folders/1LWeesmZDsXp9gwKXQHpo-RSwTIrIh3H_?usp=drive_link"
 
 # Measured by the team on their own Android phone (Galaxy, HTTP Shortcuts app), not in this repo's CI.
 ANDROID_TEST = {"device": "Samsung Galaxy", "app": "HTTP Shortcuts",
@@ -241,6 +241,22 @@ def main() -> None:
              "oder geteilten Text an `/scan-text` und geteilte Screenshots an `/scan` und zeigt die Ampel an. "
              "Die Serveradresse wird in den Einstellungen der App hinterlegt. Einrichtung und Aufbau: "
              "[`android/README.md`](android/README.md).\n")
+
+    L.append("**App bauen** (JDK 17 und Android SDK Platform 34 nötig, am einfachsten über Android Studio):\n")
+    L.append("```bash\n"
+             "# Variante A: Android Studio -> Open -> Ordner android/ auswaehlen, Gradle-Sync abwarten,\n"
+             "#             Geraet anschliessen (USB-Debugging an) und auf Run druecken.\n"
+             "\n"
+             "# Variante B: Kommandozeile\n"
+             "cd android\n"
+             "echo \"sdk.dir=$ANDROID_HOME\" > local.properties   # Pfad zum Android SDK\n"
+             "./gradlew assembleDebug                          # APK bauen\n"
+             "./gradlew installDebug                           # auf ein angeschlossenes Geraet spielen\n"
+             "```\n")
+    L.append("Die APK liegt danach unter `android/app/build/outputs/apk/debug/app-debug.apk`. Das Projekt "
+             "enthält **keine Signierungsschlüssel**; Debug-Builds signiert Android Studio selbst. Nach dem "
+             "ersten Start die Serveradresse in den Einstellungen der App eintragen und „Verbindung testen“ "
+             "drücken.\n")
 
     L.append("## Quellen\n")
     L.append("| Quelle | Umfang | Rolle im Projekt |")
