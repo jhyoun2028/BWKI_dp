@@ -86,14 +86,16 @@ fun ScreenScanSetup(
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
         ) {
             Text(
-                "Knöpfe, Uhrzeiten und Kopfzeile nicht mitprüfen",
+                "Nur die Nachricht prüfen, nicht die Bedienelemente",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f),
             )
             Switch(checked = status.chromeFilterEnabled, onCheckedChange = onChromeFilterEnabledChange)
         }
         Text(
-            "Empfohlen: an. Zum Vergleichen ausschalten – dann wird der ganze Bildschirmtext gesendet.",
+            "Empfohlen: an – dann werden Knöpfe, Namen, Uhrzeiten und kurze Beschriftungen weggelassen " +
+                "und nur der eigentliche Nachrichtentext gesendet. Zum Vergleichen ausschalten: " +
+                "dann geht der ganze Bildschirmtext an den Server.",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 4.dp),
         )

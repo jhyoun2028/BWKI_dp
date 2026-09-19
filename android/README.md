@@ -98,12 +98,19 @@ sofort. Ist die Bedienungshilfe aus, erscheint ein Hinweis und die Bedienungshil
 
 1. Auslöser (runder Knopf, Kachel oder Assistenten-Geste) → der Dienst liest den Text der Vordergrund-App.
    Die eigenen Fenster von DoppelCheck werden dabei übersprungen.
-2. **Bedienelemente herausfiltern** (`scan/ChromeFilter.kt`, abschaltbar in den Einstellungen):
-   weg fallen Button/ImageButton/ImageView/EditText, antippbare Elemente mit Beschreibungstext
-   (Bedienhinweise), IDs mit Endung `_btn`, `_button`, `toolbar`, `_icon`, `photo`, `divider`,
-   `date`, `entry`, `overflow` sowie eine Liste bekannter WhatsApp-Kopf-/Eingabe-IDs. Die Regeln
-   stammen aus echten WhatsApp-Mitschnitten; die Nachricht selbst steht dort in `top_message`,
-   `bottom_message`, `message_text` bzw. `conversation_row_text`.
+2. **Bedienelemente herausfiltern** (`scan/ChromeFilter.kt`, abschaltbar in den Einstellungen),
+   zwei Stufen:
+   - *Bekannte Bedienelemente:* weg fallen Button/ImageButton/ImageView/EditText, antippbare
+     Elemente mit Beschreibungstext (Bedienhinweise), IDs mit Endung `_btn`, `_button`,
+     `toolbar`, `_icon`, `photo`, `divider`, `date`, `entry`, `overflow` sowie eine Liste
+     bekannter WhatsApp-Kopf-/Eingabe-IDs. Die Regeln stammen aus echten WhatsApp-Mitschnitten;
+     die Nachricht selbst steht dort in `top_message`, `bottom_message`, `message_text` bzw.
+     `conversation_row_text`.
+   - *Nur Nachrichtenblöcke:* vom Rest gehen **nur der längste nicht antippbare Textblock und
+     jeder Block über 40 Zeichen** an den Server, alles andere fällt weg. Namenslisten,
+     „Online“, „14:32“ und kurze Beschriftungen erreichen den Klassifikator also in keiner App
+     mehr – auch nicht in Messengern, für die es keine ID-Regeln gibt. Ohne diese Stufe kam
+     genug Bedientext mit, um fast jede Prüfung auf Rot zu drehen.
 3. **Ist das überhaupt eine Nachricht?** (`scan/MessageGate.kt`) Nur wenn mindestens ein
    Textblock ≥ 25 Zeichen aus einem nicht antippbaren Element kommt, das kein
    Button/ImageButton/ImageView/EditText ist – oder ein Link oder eine Telefonnummer
@@ -128,6 +135,21 @@ sofort. Ist die Bedienungshilfe aus, erscheint ein Hinweis und die Bedienungshil
 
 Ohne die Erlaubnis „Über anderen Apps anzeigen“ zeigt die Bedienungshilfe die Vollbild-Ampel
 trotzdem an (als Bedienungshilfen-Fenster); nur der runde Knopf braucht die Erlaubnis zwingend.
+
+### Nachsehen, was wirklich gesendet wird (nur Debug-Build)
+
+Wenn die App eine Nachricht anders bewertet als die Gradio-Demo, liegt es fast immer am Text,
+den der Bildschirm liefert. Zwei getrennte Logcat-Ausgaben zeigen das:
+
+```bash
+adb logcat -s DoppelCheck      # genau der Text, der an /scan-text geht, plus die Anfrage selbst
+adb logcat -s DoppelCheckScan  # jeder gelesene Knoten mit KEEP/DROP und Grund
+```
+
+Der gesendete Text steht zwischen den Markierungen
+`===== BEGIN TEXT SENT TO /scan-text chars=… =====` und `===== END TEXT SENT =====`;
+Zeilenumbrüche erscheinen als `\n`, damit der ganze Text in einer Zeile lesbar bleibt.
+Release-Builds loggen beides **nicht** – die Ausgaben enthalten die Nachrichten der Nutzerin.
 
 ## Serveradresse eintragen (einmalig)
 
@@ -225,10 +247,11 @@ android/
     tile/ScanTileService.kt  Kachel in den Schnelleinstellungen: löst die Bildschirmprüfung aus
     scan/DoppelCheckAccessibilityService.kt  Bedienungshilfe, liest Text nur auf Auslöser
     scan/ScreenTextCollector.kt  Knotenbaum → Text (Tiefensuche, sichtbar, ohne Dopplungen)
-    scan/ChromeFilter.kt   entfernt Knöpfe, Uhrzeiten, Kopfzeile, Eingabefeld vor dem Senden
+    scan/ChromeFilter.kt   entfernt Bedienelemente und behält nur die Nachrichtenblöcke
     scan/ScriptCheck.kt    Schriftsystem-Prüfung: Koreanisch/CJK/Kyrillisch wird nicht gesendet
     scan/MessageGate.kt    „Ist das eine Nachricht?“ – Sperre vor jeder Anfrage
-    scan/ScanDebugLog.kt   nur Debug-Build: jeder gelesene Knoten nach Logcat (Tag DoppelCheckScan)
+    scan/ScanDebugLog.kt   nur Debug-Build: Knotenliste (Tag DoppelCheckScan) und der
+                           tatsächlich gesendete Text (Tag DoppelCheck) nach Logcat
     scan/BubbleOverlay.kt  runder, verschiebbarer Knopf (SYSTEM_ALERT_WINDOW)
     scan/SystemSettings.kt öffnet die nötigen Systemeinstellungen, prüft die Assistenten-Rolle
     scan/ScreenScanTrigger.kt  Auslöser von außerhalb der Bedienungshilfe (Assistenten-Geste)
