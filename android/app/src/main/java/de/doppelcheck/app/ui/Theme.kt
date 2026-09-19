@@ -15,9 +15,10 @@ import androidx.compose.ui.unit.sp
 // (contrast >= 4.5:1), because the target group often uses high brightness outdoors.
 val VerdictRed = Color(0xFFB3261E)
 // Amber, deliberately close to red: since the model moved, more phishing lands on yellow,
-// and yellow must read as a warning. White on this is 3.1:1 – enough for the large type of
-// the verdict surfaces (WCAG large-text 3:1), below the 4.5:1 that normal-size text needs.
-val VerdictYellow = Color(0xFFBF8700)
+// and yellow must read as a warning. Darker than the first amber (#BF8700, only 3.1:1) so
+// white text stays readable: 4.3:1, at the WCAG AA 4.5:1 bar for normal text and well above
+// the 3:1 for the large type of the verdict surfaces.
+val VerdictYellow = Color(0xFFA66E00)
 val VerdictGreen = Color(0xFF1B5E20)
 /** Not checked / verdict "unknown": neutral grey, so it can never be mistaken for green. */
 val VerdictNeutral = Color(0xFF455A64)
