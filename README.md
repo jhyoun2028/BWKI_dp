@@ -82,6 +82,8 @@ src/url_check.py        Regelbasierte Link-Prüfung
 src/fetch_blocklists.py Phishing-Listen herunterladen (PhishTank, OpenPhish, Tranco)
 src/ocr.py              Texterkennung aus Screenshots
 src/pipeline.py         Ampel-Logik, Modellwahl mit Rückfallebene
+src/script_check.py     versteckte fremde Schriftzeichen (Homoglyphen)
+src/make_samples.py     erzeugt die Beispiel-Screenshots
 src/eval_pipeline.py    Ampel-Auswertung auf dem deutschen Testteil
 src/tune_threshold.py   Schwellenwert-Suche und Kombinationsversuch
 src/error_analysis.py   erzeugt results/error_analysis.md
@@ -91,6 +93,7 @@ notebooks/          01 Daten · 02 Baseline · 03 DistilBERT (Colab) · 04 Demo-
 app/gradio_demo.py  Web-Demo
 api/main.py         /health, /scan-text, /scan
 shortcut/README.md  Anleitung für den iOS-Kurzbefehl
+android/            eigene Android-App (Kotlin/Compose), ruft dieselbe API auf
 tests/              pytest (URL-Prüfung, Pipeline, OCR)
 models/             baseline.joblib; DistilBERT liegt auf Google Drive
 results/            metrics.json, experiments.csv, error_analysis.md, Konfusionsmatrizen
@@ -142,6 +145,8 @@ Ausführliche Anleitung samt Beispiel-JSON und Fehlersuche: [`shortcut/README.md
 Auf Android übernimmt die kostenlose App **HTTP Shortcuts** dieselbe Rolle: ein Kurzbefehl mit `POST` auf `https://<adresse>/scan`, Anfragetyp *multipart/form-data*, Dateifeld **`file`**, und die Antwort wird als Mitteilung angezeigt. Auslösen lässt er sich über ein Widget auf dem Startbildschirm oder eine Gestentaste.
 
 Vom Team auf einem **Samsung Galaxy** getestet: eine gefälschte DHL-SMS ergab **Rot** (p = 0.9785), die echte DHL-Zustellbenachrichtigung **Grün** (p = 0.0679). Der Weg über die API ist damit auf beiden Plattformen identisch – nur die App für die Geste unterscheidet sich.
+
+Zusätzlich liegt im Ordner `android/` eine **eigene minimale Android-App** (Kotlin, Jetpack Compose, ab Android 10). Sie enthält keine eigene Erkennungslogik, sondern schickt getippten oder geteilten Text an `/scan-text` und geteilte Screenshots an `/scan` und zeigt die Ampel an. Die Serveradresse wird in den Einstellungen der App hinterlegt. Einrichtung und Aufbau: [`android/README.md`](android/README.md).
 
 ## Quellen
 
