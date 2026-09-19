@@ -107,7 +107,7 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
         val settings = SettingsStore(this)
         val root = targetRoot()
         val collected = root?.let(ScreenTextCollector::collectEntries).orEmpty()
-        val dropReasons = collected.map(ChromeFilter::dropReason)
+        val dropReasons = ChromeFilter.dropReasons(collected)
         val kept = if (settings.chromeFilterEnabled) {
             collected.filterIndexed { i, _ -> dropReasons[i] == null }
         } else {
@@ -137,6 +137,7 @@ class DoppelCheckAccessibilityService : AccessibilityService() {
             else -> scanJob = scope.launch {
                 resultOverlay.show(ScanState.Loading)
                 try {
+                    ScanDebugLog.dumpSentText(text)
                     val result = ApiClient.api.scanText(settings.endpoint("/scan-text"), TextRequest(text))
                     notifier.showResult(result)
                     // Closed while waiting: the notification alone is enough, do not pop up again.

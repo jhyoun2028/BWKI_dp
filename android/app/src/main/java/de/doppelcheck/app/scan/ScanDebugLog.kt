@@ -2,6 +2,7 @@ package de.doppelcheck.app.scan
 
 import android.util.Log
 import de.doppelcheck.app.BuildConfig
+import de.doppelcheck.app.api.ApiClient
 
 /**
  * Debug builds only: writes the exact collected screen text to Logcat, one line per node,
@@ -57,5 +58,19 @@ object ScanDebugLog {
         }
         notes.forEach { Log.d(TAG, "-- $it") }
         Log.d(TAG, "===== END SCAN =====")
+    }
+
+    /**
+     * The exact text handed to POST /scan-text, logged right before the request under the API tag
+     * (`adb logcat -s DoppelCheck`) so it sits next to the request line and is easy to read on its
+     * own, separate from the node dump above. Line breaks are shown as `\n`.
+     */
+    fun dumpSentText(text: String) {
+        if (!BuildConfig.DEBUG) return
+        Log.i(ApiClient.LOG_TAG, "===== BEGIN TEXT SENT TO /scan-text chars=${text.length} =====")
+        text.replace("\n", "\\n").chunked(CHUNK).forEachIndexed { part, chunk ->
+            Log.i(ApiClient.LOG_TAG, if (part == 0) chunk else "(cont. $part) $chunk")
+        }
+        Log.i(ApiClient.LOG_TAG, "===== END TEXT SENT =====")
     }
 }

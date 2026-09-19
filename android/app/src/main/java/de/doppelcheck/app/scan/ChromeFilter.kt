@@ -6,10 +6,17 @@ package de.doppelcheck.app.scan
  * (`adb logcat -s DoppelCheckScan`), where the message itself sits in `id/top_message`,
  * `id/bottom_message`, `id/message_text` or `id/conversation_row_text`.
  *
- * Generic rules first (class, clickable description, id suffix) so it also works in other
- * messengers; the WhatsApp id list is an extra deny layer on top.
+ * Two stages, see [dropReasons]:
+ *  1. chrome rules – generic first (class, clickable description, id suffix) so they also work in
+ *     other messengers, then the WhatsApp id list as an extra deny layer,
+ *  2. message blocks – of what survives, only the single longest non-clickable block and every
+ *     block over [LONG_BLOCK_CHARS] characters are sent. Short leftovers (contact names,
+ *     "online", "14:32", one-word labels) never reach the classifier, in any app.
  */
 object ChromeFilter {
+
+    /** A block this long is message text in any app; shorter leftovers are labels. */
+    const val LONG_BLOCK_CHARS = 40
 
     /** WhatsApp chrome seen in the dumps that the generic rules do not all catch. */
     private val WHATSAPP_CHROME_IDS = setOf(
@@ -24,7 +31,30 @@ object ChromeFilter {
         "_btn", "_button", "toolbar", "_icon", "photo", "divider", "date", "entry", "overflow",
     )
 
-    /** Why [entry] is chrome, or null if it is kept. The reason is shown in the debug dump. */
+    /**
+     * Why each entry is dropped, parallel to [entries]; null = sent to the classifier.
+     * Stage 1 is [dropReason], stage 2 keeps only the message blocks ([messageBlocks]).
+     */
+    fun dropReasons(entries: List<ScreenTextCollector.Entry>): List<String?> {
+        val chrome = entries.map(::dropReason)
+        val survivors = entries.filterIndexed { i, _ -> chrome[i] == null }
+        val blocks = messageBlocks(survivors).toSet()
+        return entries.mapIndexed { i, entry ->
+            chrome[i] ?: if (entry in blocks) null else "not-message-block"
+        }
+    }
+
+    /**
+     * The blocks that actually look like a message: the single longest non-clickable block plus
+     * every block over [LONG_BLOCK_CHARS] characters, in on-screen order. Everything else is
+     * dropped – a chat screen has one or two real messages and a dozen short labels.
+     */
+    fun messageBlocks(entries: List<ScreenTextCollector.Entry>): List<ScreenTextCollector.Entry> {
+        val longest = entries.filterNot { it.clickable }.maxByOrNull { it.text.length }
+        return entries.filter { it.text.length > LONG_BLOCK_CHARS || it == longest }
+    }
+
+    /** Why [entry] is chrome, or null if it survives stage 1. The reason is shown in the debug dump. */
     fun dropReason(entry: ScreenTextCollector.Entry): String? {
         if (MessageGate.isControlClass(entry.className)) return "control-class"
         // Clickable content descriptions are accessibility hints of controls,
